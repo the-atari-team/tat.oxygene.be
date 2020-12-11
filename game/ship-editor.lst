@@ -1,0 +1,1264 @@
+REM cdw by 'The Atari Team' 2020
+REM licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
+
+REM YES, no line numbers, use xldir to insert into ATR-Disk
+REM it will create line numbers for you and remove every REM to save memory
+
+bload "D:DLISTEDT.COM"
+bload "D:OXYFONTE.COM"
+REM bload "D:SHLDFONT.COM"
+bload "D:DRAWBLCK.COM"
+
+poke 82,%0
+poke $9400+8*121+%3,$8B :REM Markiere die Landebahndreiecke
+
+a=usr($9203) :REM initialise Displaylist & DLIs
+
+poke 709,15
+poke 710,%0
+
+REM Farben stimmen mal wieder nicht
+REM grep RS_SHIP_COLOR0 /tmp/atari/DLISTEDT.LOG
+REM
+REM
+shipColor=$639
+
+
+
+k4=%2+%2:k5=%2+%3
+k15=15:K16=K15+%1
+k32=k16*%2:K65=65
+K128=128
+k200=$200
+k9800=$9800
+K256=K128*%2
+
+dim shipColors(6)
+shipColors(%0)=$06
+shipColors(%1)=$16
+shipColors(%2)=$26
+shipColors(%3)=$86
+shipColors(k4)=$96
+shipColors(k5)=$e6
+
+poke shipColor,%2
+poke shipColor+%1,12
+poke shipColor+%2,shipColors(%0)
+poke shipColor+%3,$34
+
+dim a$(K256)
+dim b$(K256)
+dim c$(K256)
+bookmark=fre(%0)-($bc20-$8b00)
+dim bookmarks$(bookmark-512)
+
+
+currentno=asc("A")
+
+REM go#do_not_show_font
+
+j=%0 :REM einmal alle Zeichen zeigen
+n=%1
+for x=K5 to 44 step %2
+  for i=k9800 to $b400 step K200*%2
+    poke i+x,j
+    j=j+n
+    if j>k128 then n=%0:j=%0
+  next i
+next x
+
+#do_not_show_font
+
+poke $ba00,%0
+move $ba00,$ba01,$21e
+REM for x=$ba00 to $bc1f :REM loeschen des MiniaturRaumers
+REM   poke x,%0
+REM next x
+
+cls
+
+xcursor=44 :REM ship started grundsaetzlich bei cursorpos 48
+ycursor=%0
+
+
+xpos=48*K4-k32
+
+a=usr($9200,xpos)
+
+REM exec drawship
+
+xc=xcursor
+yc=ycursor
+
+mode=%0
+exec showmenu
+xcold = xc + %1
+ycold = yc + %1
+modeold = %1
+
+do
+  exec redcursor
+  if xcold<>xc
+    position %0,%0
+    ? "x:";xc;" ";
+    xcold=xc
+  endif
+
+  if ycold<>yc
+    position 6,%0
+    ? " y:";yc;" ";
+    ycold=yc
+  endif
+
+  if modeold<>mode
+    position 12,%0
+    ? " mode: ";
+    if mode=%0 then ? "Bookmark free:";bookmark - len(bookmarks$);"  "
+    if mode=%1 then ?"Frames",,
+    if mode=%2 then ?"Plates",,
+    if mode=%3 then ?"Landebahn",
+    if mode=K4 then ?"Gebaeude/Masten",
+    if mode=K5 then ?"Areas",,
+    if mode=6 then  ?"Diagonal Frames",
+    if mode=7 then  ?"Bridges",,
+    if mode=8 then  ?"Copy & Paste / Move"
+    if mode=9 then  ?"Load/Store",
+    modeold = mode
+  endif
+
+  if ghold <> gh
+    position %0,%1
+    ?"Width:";width;"  Height: "; height;"  ";key,
+    ghold = gh
+  endif
+
+  get key
+
+  exec normalcursor
+
+
+  if key=asc("#")
+    poke $ba00,%0:move $ba00,$ba01,$21e
+    bitl=k128
+    for bit=%0 to 7
+      byte=bit*k16/9
+      for x=%0 to 39
+        addr = k9800 + x * 12.8
+          for line=%0 to 12
+            n=peek(addr + int(line*18/13)*k200+byte)
+            if n <> %0
+              y=$ba00+x + line*40
+              old = peek(y)
+              poke y,bitl!old
+            endif
+          next line
+      next x
+      bitl=bitl/%2
+    next bit
+  endif
+
+  if key = asc(".") :REM invert under cursor
+    n=peek(k9800 + xc + yc*k200)
+    n = n exor 128
+    poke k9800 + xc + yc*k200,n
+  endif
+
+  if key = 27 then mode=%0
+
+  if key = k32
+    b$=""
+    xc=xc+width:xpos = K4*xc-k32
+  endif
+
+  exec restoreBlock
+
+  if key=30 then xc=xc-%1:xpos = K4*xc-k32 :REM Cursor links
+  if key=31 then xc=xc+%1:xpos = K4*xc-k32 :REM Cursor rechts
+
+
+  if key=28 then yc=yc-%1 :REM Cursor hoch
+  if key=29 then yc=yc+%1 :REM Cursor runter
+  if yc<%0 then yc=%0
+  if yc>k16 then yc=K16
+
+
+  if key=92 then xpos=xpos-%1:REM . Playfield links, rechts
+  if key=94 then xpos=xpos+%1
+  if key=95 then xc=xc+10:xpos = K4*xc-k32
+  if key=124 then xc=xc-10:xpos = K4*xc-k32
+
+  if xc<%0 then xc=%0
+  if xc>511 then xc=511
+
+  if xpos>1856 then xpos=1856
+  if xpos<%0 then xpos=%0
+
+  if key=asc("1") then mode=%1 :exec frames
+  if key=asc("2") then mode=%2 :exec plates
+  if key=asc("3") then mode=%3 :exec landebahn
+  if key=asc("4") then mode=K4 :exec building
+  if key=asc("5") then mode=K5 :exec areas
+  if key=asc("6") then mode=6 :exec diagonal
+  if key=asc("7") then mode=7 :exec bridges
+  if key=asc("8") then mode=8 :exec moves
+  if key=asc("9") then mode=9 :exec loadstore
+  if key=asc("0") then mode=%0 : exec showmenu
+
+  REM INIT
+
+  x1=xc
+  y1=yc
+  xcount=%1
+  ycount=%1
+  xcursor=xc
+  ycursor=yc
+
+  if mode = %0
+    a$=""
+  endif
+
+  REM Frames
+
+  if mode=%1
+    if key=asc("J") then exec frameLeft
+    if key=asc("K") then exec frameTopButtom
+    if key=asc("L") then exec frameRight
+
+    if key=asc("Q") then a$=chr$(%2+K65):de=%0 :REM links_oben_voll
+    if key=asc("W") then a$=chr$(%3+K65):de=%0 :REM oben_voll
+    if key=asc("E") then a$=chr$(k4+K65):de=%0 :REM rechts_oben_voll
+
+    if key=asc("A") then a$=chr$(k5+K65):de=%0 :REM links_zu
+    if key=asc("S") then a$=chr$(%1+K65):de=%0 :REM mitte
+    if key=asc("D") then a$=chr$(6+K65):de=%0 :REM rechts_zu
+
+    if key=asc("Y") then a$=chr$(7+K65):de=%0 :REM links_unten_voll
+    if key=asc("X") then a$=chr$(8+K65):de=%0 :REM unten_voll
+    if key=asc("C") then a$=chr$(9+K65):de=%0 :REM rechts_unten_voll
+
+
+    if key=asc("R") then a$=chr$(72+K65):de=%0 :REM oben_voll_auf_halb
+    if key=asc("T") then a$=chr$(56+K65):de=%0 :REM oben_halb
+    if key=asc("Z") then a$=chr$(75+K65):de=%0 :REM oben_halb_auf_voll
+
+REM    if key=asc("Y") then a$=chr$(7+K65):de=%0 :REM unten_voll
+    if key=asc("G") then a$=chr$(57+K65):de=%0 :REM unten_voll
+REM    if key=asc("Y") then a$=chr$(7+K65):de=%0 :REM unten_voll
+
+    if key=asc("V") then a$=chr$(84+K65):de=%0 :REM unten_voll_auf_halb
+    if key=asc("B") then a$=chr$(58+K65):de=%0 :REM unten_halb
+    if key=asc("N") then a$=chr$(83+K65):de=%0 :REM unten_halb_auf_voll
+
+    if key=asc("U") then exec randschraeg1
+    if key=asc("I") then exec frameTopButtom2
+    if key=asc("O") then exec randschraeg2
+
+  endif
+
+  REM Plates
+
+  if mode=%2
+    if key=asc("A") then a$="AC-FH":de=%2 :REM plate2x2
+    if key=asc("B") then a$="ABC-D.E-FGH":de=%2 :REM plate3x3
+    if key=asc("C") then a$="ABBC-D..E-D..E-FGGH":de=%2 :REM plate4x4
+    if key=asc("D") then a$="ABBBC-D...E-D...E-D...E-FGGGH": de=%2 :REM plate5x5
+
+    if key=asc("E") then a$="AC-DE-FH":de=%2 :REM plate2x3
+    if key=asc("F") then a$="AC-DE-DE-FH":de=%2 :REM plate2x4
+    if key=asc("G") then a$="ABC-D.E-D.E-FGH":de=%2 :REM plate3x4
+    if key=asc("H") then a$="AC-DE-DE-DE-FH":de=%2 :REM plate2x5
+    if key=asc("I") then a$="ABC-D.E-D.E-D.E-FGH":de=%2 :REM plate3x5
+    if key=asc("J") then a$="A":de=122:REM plate1x1
+
+    if key=asc("K") then a$="ABI-D.J-KLM":de=%2 :REM plate3x3hoeher
+
+    if key=asc("L") then a$="BD-GI":de=%1+k128:REM plate2x2red
+    if key=asc("M") then a$="BCD-EAF-GHI":de=%1+k128 :REM plate3x3red
+    if key=asc("N") then a$="BCCD-EAAF-EAAF-GHHI":de=%1+k128 :REM plate4x4red
+    if key=asc("O") then a$="A":de=122+K128:REM plate1x1
+
+    if key=asc("P") :REM inner Plate 1x1
+      a$=chr$(155)
+      a$(len(a$)+%1)="I"
+      a$(len(a$)+%1)=chr$(156)
+      a$(len(a$)+%1)="-G"
+      a$(len(a$)+%1)=chr$(194)
+      a$(len(a$)+%1)="F-"
+      a$(len(a$)+%1)=chr$(157)
+      a$(len(a$)+%1)="D"
+      a$(len(a$)+%1)=chr$(158)
+      de=%0
+    endif
+    if key=asc("Q") :REM inner Plate links oben
+      a$=chr$(155)
+      a$(len(a$)+%1)="I-GA"
+      de=%0
+    endif
+    if key=asc("R") :REM inner Plate rechts oben
+      a$="I"
+      a$(len(a$)+%1)=chr$(156)
+      a$(len(a$)+%1)="-AF"
+      de=%0
+    endif
+    if key=asc("S") :REM inner Plate links unten
+      a$="GA-"
+      a$(len(a$)+%1)=chr$(157)
+      a$(len(a$)+%1)="D"
+      de=%0
+    endif
+    if key=asc("T")
+      a$="AF-D"
+      a$(len(a$)+%1)=chr$(158)
+      de=%0
+    endif
+
+  endif
+
+  REM landebahnen/Jets
+
+  if mode=%3
+    if key=asc("A") then exec startbahn
+    if key=asc("B") then exec landebahn1
+    if key=asc("C") then exec landebahn5
+    if key=asc("D") then exec landebahn_pfeil
+
+    if key=asc("E"):REM volle Landebahn
+      n=121-26+k65
+      a$=chr$(n)
+      a$(len(a$)+%1)="AAAAAAAAAAAAAAAAAAA-"
+      a$(len(a$)+%1)=chr$(n)
+      a$(len(a$)+%1)="B"
+      a$(len(a$)+%1)=chr$(n)
+      a$(len(a$)+%1)="BB"
+      a$(len(a$)+%1)=chr$(n)
+      a$(len(a$)+%1)="BBB"
+      a$(len(a$)+%1)=chr$(n)
+      a$(len(a$)+%1)="BBBB"
+      a$(len(a$)+%1)=chr$(n)
+      a$(len(a$)+%1)="BBBBB-
+      a$(len(a$)+%1)=chr$(n)
+      a$(len(a$)+%1)="DDDDDDDDDDDDDDDDDDD"
+      de=26
+    endif
+
+    if key=asc("F") then exec jet
+    if key=asc("G") then exec jet2
+    if key=asc("H") then exec explodierenderJet
+
+    if key=asc("I") then exec landebahnschmal
+    if key=asc("J") then exec jetSchmal
+    if key=asc("K") then exec jetSchmalExplode
+
+  endif
+
+  REM Gebaeude/Masten
+
+  if mode =K4
+    if key=asc("A") then exec house4x4
+    if key=asc("B") then exec house4x3_quadrat
+    if key=asc("C") then exec house4x2_oben
+    if key=asc("D") then a$="EFGG-EFGG":de=K15:REM house mitte
+    if key=asc("E") then exec house4x2_unten
+
+    if key=asc("F") then a$="A....-BDG..-CEF..-..H..":de=48 :REM mast3x4
+    if key=asc("G") then a$="ABC-DEF-.GH":de=103 :REM mast3x3
+
+    if key=asc("H") then a$="ABC-DEF-GHI":de=61:REM gitter3x3
+    if key=asc("I") then a$="ABC":de=61:REM gitter3x1
+    if key=asc("J") then a$="DEF":de=61:REM gitter3x1
+    if key=asc("K") then a$="GHI":de=61:REM gitter3x1
+    if key=asc("L") then a$="ABC-DEF-DEF-DEF-GHI":de=61:REM gitter3x5
+    if key=asc("M") then a$="ABBBBC-DEEEEF-GHHHHI":de=61:REM gitter6x3
+    if key=asc("N") then a$="ABBBBC":de=61:REM gitter6x3
+    if key=asc("O") then a$="DEEEEF":de=61:REM gitter6x3
+    if key=asc("P") then a$="GHHHHI":de=61:REM gitter6x3
+    if key=asc("Q") then exec laengstgitter
+
+    if key=asc("R") then exec pfeil_links
+    if key=asc("S") then exec dot_2x2
+    if key=asc("T") then exec Cover3x3
+    if key=asc("U") then exec dot_1x1
+    if key=asc("V") :REM Diamant
+      a$="."
+      a$(len(a$)+%1)=chr$(141)
+      a$(len(a$)+%1)=chr$(136)
+      a$(len(a$)+%1)=".-"
+      a$(len(a$)+%1)=chr$(141)
+      a$(len(a$)+%1)="FG"
+      a$(len(a$)+%1)=chr$(136)
+      a$(len(a$)+%1)="-"
+      a$(len(a$)+%1)=chr$(143)
+      a$(len(a$)+%1)="FG"
+      a$(len(a$)+%1)=chr$(146)
+      a$(len(a$)+%1)="-."
+      a$(len(a$)+%1)=chr$(143)
+      a$(len(a$)+%1)=chr$(146)
+      a$(len(a$)+%1)="."
+      de=%0
+    endif
+    if key=asc("W") :REM Diamant
+      a$=chr$(76+k65)
+      a$(len(a$)+%1)="-"
+      a$(len(a$)+%1)=chr$(78+K65)
+      de=%0
+    endif
+    if key=asc("X") :REM Diamant
+      a$=chr$(71+k65)
+      a$(len(a$)+%1)="-"
+      a$(len(a$)+%1)=chr$(81+K65)
+      de=%0
+    endif
+REM    if key=asc("Y") then exec shipexplode
+  endif
+
+  REM Areas
+
+  if mode=K5
+    if key=asc("A") then a$=".":de=%2 :REM area 1x1
+    if key=asc("B") then a$="..-..":de=%2 :REM area2x2
+    if key=asc("C") then a$="...-...-...":de=%2 :REM area3x3
+    if key=asc("D") then a$="....-....-....-....":de=%2 :REM area4x4
+    if key=asc("E") then a$=".....-.....-.....-.....-.....":de=%2 :REM area5x5
+
+    if key=asc("F") then a$="A":de=%0 :REM area 1x1
+    if key=asc("G") then a$="AA-AA":de=%0 :REM area2x2
+    if key=asc("H") then a$="AAA-AAA-AAA":de=%0 :REM area3x3
+    if key=asc("I") then a$="AAAA-AAAA-AAAA-AAAA":de=%0 :REM area4x4
+    if key=asc("J") then a$="AAAAA-AAAAA-AAAAA-AAAAA-AAAAA":de=%0 :REM area5x5
+
+    if key=asc("K") then a$="A-A-A-A-A-A-A-A-A-A-A-A-A-A-A-A-A":de=%0 :REM area1x17
+
+    if key=asc("L") then a$="A":de=21 :REM Schatten
+    if key=asc("M") then a$="A-A-A":de=21 :REM Schatten x3
+    if key=asc("N") then a$="A-A-A-A-A":de=21 :REM Schatten x5
+
+  endif
+
+  if mode=6
+    if key=asc("Q")
+      a$=""
+      a$(len(a$)+%1)=chr$(74+K65)
+      a$(len(a$)+%1)=chr$(75+K65)
+      de=%0
+    endif
+    if key=asc("W") then a$=chr$(%3+K65):de=%0 :REM oben_voll
+    if key=asc("E")
+       a$=chr$(72+K65)
+       a$(%2)=chr$(73+K65)
+       de=%0
+    endif
+
+    if key=asc("A") then a$=chr$(5+K65):de=%0 :REM links_zu
+    if key=asc("S") then a$=chr$(%1+K65):de=%0 :REM mitte
+    if key=asc("D") then a$=chr$(6+K65):de=%0 :REM rechts_zu
+
+    if key=asc("Y")
+      a$=""
+      a$(len(a$)+%1)=chr$(82+K65)
+      a$(len(a$)+%1)=chr$(83+K65)
+      de=%0
+    endif
+    if key=asc("X") then a$=chr$(8+K65):de=%0 :REM unten_voll
+    if key=asc("C")
+      a$=chr$(84+K65)
+      a$(%2)=chr$(85+K65)
+      de=%0
+    endif
+
+    if key=asc("R")
+      a$=chr$(76+K65)
+      a$(len(a$)+%1)=chr$(77+K65)
+      de=%0
+    endif
+    if key=asc("T")
+       a$=chr$(70+K65)
+       a$(%2)=chr$(71+K65)
+       de=%0
+    endif
+    if key=asc("F")
+      a$=chr$(78+K65)
+      a$(len(a$)+%1)=chr$(79+K65)
+      de=%0
+    endif
+    if key=asc("G")
+       a$=chr$(80+K65)
+       a$(%2)=chr$(81+K65)
+       de=%0
+    endif
+
+REM    if key=asc("R") then drawnumber=1:exec schraeg_oben_rechts_oben15
+REM    if key=asc("T") then drawnumber=2:exec schraeg_oben_rechts_oben15
+REM    if key=asc("Z") then drawnumber=3:exec schraeg_oben_rechts_oben15
+REM    if key=asc("U") then drawnumber=4:exec schraeg_oben_rechts_oben15
+REM    if key=asc("I") then drawnumber=5:exec schraeg_oben_rechts_oben15
+REM    if key=asc("O") then drawnumber=7:exec schraeg_oben_rechts_oben15
+REM    if key=asc("P") then drawnumber=9:exec schraeg_oben_rechts_oben15
+REM    if key=asc("F") then drawnumber=11:exec schraeg_oben_rechts_oben15
+REM    if key=asc("G") then drawnumber=13:exec schraeg_oben_rechts_oben15
+REM    if key=asc("H") then drawnumber=15:exec schraeg_oben_rechts_oben15
+
+REM    if key=asc("J") then drawnumber=1:exec schraeg_oben_links_oben15
+REM    if key=asc("K") then drawnumber=2:exec schraeg_oben_links_oben15
+REM    if key=asc("L") then drawnumber=3:exec schraeg_oben_links_oben15
+REM    if key=asc("V") then drawnumber=4:exec schraeg_oben_links_oben15
+REM    if key=asc("B") then drawnumber=5:exec schraeg_oben_links_oben15
+REM    if key=asc("N") then drawnumber=7:exec schraeg_oben_links_oben15
+REM    if key=asc("M") then drawnumber=9:exec schraeg_oben_links_oben15
+REM    if key=asc(",") then drawnumber=11:exec schraeg_oben_links_oben15
+REM    if key=asc(".") then drawnumber=13:exec schraeg_oben_links_oben15
+REM    if key=asc("-") then drawnumber=15:exec schraeg_oben_links_oben15
+  endif
+
+
+  if mode=7  :REM Bridges
+
+    if key=asc("Q")
+       a$=""
+       a$(len(a$)+%1)=chr$(72+K65)
+       a$(len(a$)+%1)=chr$(56+K65)
+       de=%0
+    endif
+
+    if key=asc("W")
+       a$=""
+       a$(len(a$)+%1)=chr$(56+K65)
+       de=%0
+    endif
+
+    if key=asc("E")
+       a$=""
+       a$(len(a$)+%1)=chr$(56+K65)
+       a$(len(a$)+%1)=chr$(75+K65)
+       de=%0
+    endif
+
+    if key=asc("A") then a$=chr$(%1+K65):de=%0 :REM voll
+    if key=asc("S") then a$=chr$(57+K65):de=%0 :REM streifen
+    if key=asc("D") then a$=chr$(21+K65):de=%0 :REM dunkel voll
+
+    if key=asc("Y")
+       a$=""
+       a$(len(a$)+%1)=chr$(84+K65)
+       a$(len(a$)+%1)=chr$(58+K65)
+       de=%0
+    endif
+
+    if key=asc("X")
+       a$=""
+       a$(len(a$)+%1)=chr$(58+K65)
+       de=%0
+    endif
+
+    if key=asc("C")
+       a$=""
+       a$(len(a$)+%1)=chr$(58+K65)
+       a$(len(a$)+%1)=chr$(83+K65)
+       de=%0
+    endif
+
+
+    if key=asc("R")
+       a$=""
+       a$(len(a$)+%1)=chr$(21+K65)
+       a$(len(a$)+%1)=chr$(72+K65)
+       a$(len(a$)+%1)=chr$(56+K65)
+       a$(len(a$)+%1)="-"
+       a$(len(a$)+%1)=chr$(21+K65)
+       a$(len(a$)+%1)=chr$(57+K65)
+       a$(len(a$)+%1)=chr$(57+K65)
+       a$(len(a$)+%1)="-"
+       a$(len(a$)+%1)=chr$(21+K65)
+       a$(len(a$)+%1)=chr$(84+K65)
+       a$(len(a$)+%1)=chr$(58+K65)
+       de=%0
+    endif
+
+    if key=asc("T") then a$="AAA-BBB-CCC":de=56 :REM exec steg
+
+    if key=asc("Z")
+       a$=""
+       a$(len(a$)+%1)=chr$(56+K65)
+       a$(len(a$)+%1)=chr$(75+K65)
+       a$(len(a$)+%1)=chr$(3+K65)
+       a$(len(a$)+%1)="-"
+       a$(len(a$)+%1)=chr$(57+K65)
+       a$(len(a$)+%1)=chr$(57+K65)
+       a$(len(a$)+%1)=chr$(57+K65)
+       a$(len(a$)+%1)="-"
+       a$(len(a$)+%1)=chr$(58+K65)
+       a$(len(a$)+%1)=chr$(83+K65)
+       a$(len(a$)+%1)=chr$(8+K65)
+       de=%0
+
+    endif
+
+    if key=asc("F") then a$="A-.-B":de=59 :REM innersteg
+    if key=asc("G") then a$="D-B-E":de=56
+
+    if key=asc("V") then a$="B-.-J":de=70
+    if key=asc("B") then a$="G-.-K":de=70
+
+    if key=asc("N") then a$="A-.-I":de=70
+    if key=asc("M") then a$="H-.-L":de=70
+
+    if key=asc("P") then exec schraegen
+
+    if key=asc("U") then a$="A":de=21 :REM Schatten
+    if key=asc("I") then a$="A-A-A":de=21 :REM Schatten x3
+    if key=asc("O") then a$="A-A-A-A-A":de=21 :REM Schatten x5
+
+  endif
+
+REM Move ship left/right
+REM Start copy buffer
+
+  if mode=8
+    if key=asc("L") then exec move_left
+    if key=asc("R") then exec move_right
+
+    if key=asc("S"):REM Start bookmark
+      exec show_bookmarks
+      ?"Start-mark at: ";xc;",";yc;" bookmark key?";
+      repeat
+        get key:?chr$(key)
+      until key=27 or (key >=asc("0") and key <=asc("9")) or (key >=asc("A") and key <=asc("Z"))
+      if key<>27
+        startmark=key
+        startxc=xc
+        startyc=yc
+      endif
+      key=%0
+    endif
+
+    if key=asc("C"):REM end bookmark / copy to buffer
+      if startmark <> %0
+        position %0,k5
+        ?"End-mark at: ";xc;",";yc;
+        i=%0
+        for y=startyc to yc
+          for x=startxc to xc
+            n=peek(k9800 + x + y*k200)
+            if n=%1
+              n=asc(".")
+            else
+              n=n+K65
+            endif
+            a$(i+%1)=chr$(n)
+            i=i+%1
+          next x
+          a$(i+%1)="-"
+          i=i+%1
+        next y
+        bookmarks$(len(bookmarks$)+%1)=chr$(startmark)
+        bookmarks$(len(bookmarks$)+%1)=chr$(i)
+        bookmarks$(len(bookmarks$)+%1)=a$
+        startmark=%0
+        de=%0
+      else
+        poke $bc40+160,%0:move $bc40+160,$bc40+161,120
+        position %0,K4
+        ?"ERROR!!! No Startmark given!"
+      endif
+    endif
+
+    if key=asc("V")  :REM Paste
+      exec show_bookmarks
+      position %0,K4
+      ?"bookmark:";:get key
+      i=%1
+      while i < len(bookmarks$)
+        n=asc(bookmarks$(i,i))
+        j=asc(bookmarks$(i+%1,i+%1))
+        if key=n
+          a$=bookmarks$(i+%2,i+j+%1)
+          de=%0
+          i=len(bookmarks$) :REM break
+        else
+          i=i+%2+j
+        endif
+      wend
+    endif
+
+  endif
+
+  if mode=9
+    if key=asc("L") then exec load
+    if key=asc("S") then exec store
+    if key=asc("O") then exec loadbookmark
+    if key=asc("P") then exec storebookmark
+
+    if key=asc("Q") :REM Mark endless
+      n = peek($9a00)
+      poke $9a00,n exor %1
+      exec loadstore
+    endif
+
+    if key=asc("A") :REM Mark count of jets
+      position 30,%2:?"WAIT... "
+      jets=%0
+      for y=%1 to 15
+        n=$9800 + y*$200
+        position 27,%2:?y
+        for x=%1 to 509
+          j=peek(n+x)
+          if j=30 or j=112
+            jets=jets + %1
+            position 33,6:?"(";jets;")";
+          endif
+        next x
+      next y
+      poke $9800,jets
+    endif
+  endif
+
+  exec drawblock
+
+  gh = width + height + key
+
+  a=usr($9200, xpos)
+loop
+
+REM ------------------------------
+proc show_bookmarks
+  poke $bc40+120,%0:move $bc40+120,$bc40+121,160
+  position %0,k5
+  ?"Bookmarks: [";
+  i=%1
+  while i < len(bookmarks$)
+    j=asc(bookmarks$(i,i))
+    ?chr$(j);" ";
+    n=asc(bookmarks$(i+%1,i+%1))
+    i=i+%2+n
+  wend
+  ?"]"
+endproc
+REM ------------------------------
+proc position3
+    poke $bc40+110,%0:move $bc40+110,$bc40+111,240
+    position %0,%3
+    ?"----------------------------------------";
+endproc
+
+proc showMenu
+    exec position3
+    ?"[1]:Frames   [2]:Plates   [3]:Landing"
+    ?"[4]:Building [5]:Areas    [6]:Diagonal"
+    ?"[7]:Bridges [8]:C&P Moves [9]:Load/Store"
+
+endproc
+
+proc frames
+    exec position3
+    ?"1x1 Q W E  diag R T Z  long:   U I O"
+    ?"    A S D         G            J K L"
+    ?"    Y X C       V B N "
+endproc
+
+proc plates
+    exec position3
+    ?"normal: A B C D E F G H I J K"
+    ?"   red: L M N O inner: P Ecken: Q R"
+    ?"                                S T"
+endproc
+
+proc landebahn
+    exec position3
+    ?"Startbahn: A B C D Landebahn: E"
+    ?"Small: J"
+    ?"Jet: F G [H]       Jet small: J [K]"
+endproc
+
+proc building
+    exec position3
+    ?"Haus: A B C D E  Mast: F G  Klappe: T"
+    ?"Luefung: H I J K L M N O P Q Spike: U"
+    ?"Diamond: V  <: W  >: X       other: R S"
+endproc
+
+proc areas
+    exec position3
+    ?"normal: A B C D E    backgnd: F G H I J"
+    ?"  long: K"
+    ?"shadow: L M N"
+endproc
+
+proc diagonal
+    exec position3
+    ?"Q W E     R T"
+    ?"A S D     F G"
+    ?"Y X C"
+endproc
+
+proc bridges
+    exec position3
+    ?"Q W E     R T Z     U I O      P"
+    ?"A S D     F G      "
+    ?"Y X C     V B      "
+endproc
+
+proc loadstore
+    exec position3
+    n=peek($9a00)
+    jets=peek($9800)
+REM    ?"0123456789012345678901234567890123456789
+    ?"ship      load: L    -  store: S"
+    ?"bookmarks load: O    -  store: P"
+    ?"  Endless mark: Q (";n;")-   jets: A (";jets;")"
+endproc
+
+proc moves
+    exec position3
+    ?" move left: L - right: R"
+    ?"start mark: S [key]  copy: C   paste: V";
+    ?"     paste: V [key]"
+endproc
+
+REM ------------------------------
+proc move_left
+  for i=%0 to k16
+    j=k9800 + k200 * i
+    move j+x1, j+x1-%1,512-x1
+  next i
+endproc
+
+proc move_right
+  for i=%0 to k16
+    j=k9800 + k200 * i
+    -MOVE j+x1, j+x1+%1,512-x1
+  next i
+endproc
+
+REM ------------------------------
+
+proc normalcursor
+  addr = k9800 + yc * k200 + xc
+  poke addr,untercursor
+endproc
+
+proc redcursor
+  addr = k9800 + yc * k200 + xc
+  untercursor=peek(addr)
+  if untercursor = %0
+    poke addr, k128+%1
+  else
+    poke addr, untercursor ! k128
+  endif
+endproc
+
+proc getname
+  do
+    a$(9,9)=chr$(no)
+    position %0,%2
+    ? b$;a$,
+    get key
+    if key=29 and no>asc("A") then no=no-%1:currentno=no
+    if key=28 and no<asc("Z") then no=no+%1:currentno=no
+    if key=$9B or key=27 then exit
+  loop
+
+endproc
+
+proc storebookmark
+  no=currentno
+  A$="H2:BOOK-A.DAT"
+  b$="Store bookmarks: "
+  exec getname
+  if key<>27
+
+    ?"STORE BOOKMARKS..."
+    open #%1,8,%0,a$
+    put#%1,asc("B")
+    put#%1,len(bookmarks$) MOD K256
+    put#%1,len(bookmarks$) DIV K256
+
+    bput#%1,adr(bookmarks$), len(bookmarks$)
+    close#%1
+  endif
+  exec clearall
+endproc
+
+proc store
+  no=currentno
+  A$="H2:SHIP-A.DAT"
+  b$="Store: "
+  exec getname
+  if key<>27
+
+    ?"STORE..."
+    open #%1,8,%0,a$
+    put#%1,$ff
+    put#%1,$ff
+    put#%1,$00
+    put#%1,$d8
+    put#%1,$ff
+    put#%1,$f9
+
+    bput#%1,k9800, 17*512
+    close#%1
+  endif
+  exec clearall
+endproc
+
+proc clearall
+  a$=""
+  b$=a$
+  exec loadstore
+  trap 40000
+endproc
+
+proc load
+  no=currentno
+  A$="H2:SHIP-A.DAT"
+  b$="Load:  "
+  exec getname
+  if key<>27
+    ?"LOAD..."
+    trap #loaderror
+    open #%1,k4,%0,a$
+    get #%1,i
+    get #%1,j
+    if i=$ff and j=$ff
+      get #%1,n
+      get #%1,n
+      get #%1,n
+      get #%1,n
+      bget#%1,k9800, 17*512
+    else
+      poke k9800,i
+      poke k9800+%1,j
+      bget#%1,k9800+%2, 17*512-%2
+    endif
+    go#noloaderror
+
+    #loaderror
+    ?"Error at load. "; err; :get key
+
+    #noloaderror
+    close#%1
+  endif
+  exec clearall
+endproc
+
+proc loadbookmark
+  no=currentno
+  A$="H2:BOOK-A.DAT"
+  b$="Load bookmarks:"
+  exec getname
+  if key<>27
+    ?"LOAD..."
+    trap #loaderror2
+    open #%1,k4,%0,a$
+    get #%1,i
+    if i=asc("B")
+      get #%1,i
+      get #%1,j
+      n=i+j*K256
+      bget#%1,adr(bookmarks$), n
+      bookmarks$(n+%1)=""
+    endif
+    go#noloaderror2
+
+    #loaderror2
+    ?"Error at load. "; err; :get key
+
+    #noloaderror2
+    close#%1
+  endif
+  exec clearall
+endproc
+
+REM ------------------------------
+
+proc frameTopButtom
+  a$="B-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-G"
+  de=%2
+  REM exec drawblock
+endproc
+
+proc frameLeft
+  a$="A-D-D-D-D-D-D-D-D-D-D-D-D-D-D-D-F"
+  de=%2
+  REM exec drawblock
+endproc
+
+proc frameRight
+  a$="C-E-E-E-E-E-E-E-E-E-E-E-E-E-E-E-H"
+  de=%2
+  REM exec drawblock
+endproc
+
+proc frameTopButtom2
+  a$="A-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-C"
+  de=56
+  REM exec drawblock
+endproc
+
+proc randschraeg1
+  a$="C-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-O"
+  de=70
+  REM exec drawblock
+endproc
+proc randschraeg2
+  a$="F-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-N"
+  de=70
+  REM exec drawblock
+endproc
+
+
+REM proc schraeg_oben_rechts_oben15
+REM   a$=chr$(74+K65)
+REM   a$(len(a$)+%1)=chr$(75+K65)
+REM   a$(len(a$)+%1)="-"
+REM   for a=%1 to drawnumber
+REM     if zu=%1
+REM       a$(len(a$)+%1)=chr$(5+K65)
+REM     else
+REM       a$(len(a$)+%1)="."
+REM     endif
+REM     a$(len(a$)+%1)=".-"
+REM next a
+REM   a$(len(a$)+%1)=chr$(82+K65)
+REM   a$(len(a$)+%1)=chr$(83+K65)
+REM   de=%0
+REM   REM exec drawblock
+REM  zu=%0
+REM endproc
+
+REM proc schraeg_oben_links_oben15
+REM   a$=chr$(72+K65)
+REM   a$(len(a$)+%1)=chr$(73+K65)
+REM   a$(len(a$)+%1)="-"
+REM   for a=%1 to drawnumber
+REM     a$(len(a$)+%1)="."
+REM     if zu=%1
+REM       a$(len(a$)+%1)=chr$(6+K65)
+REM     else
+REM       a$(len(a$)+%1)="."
+REM     endif
+REM     a$(len(a$)+%1)="-"
+REM   next a
+REM   a$(len(a$)+%1)=chr$(84+K65)
+REM   a$(len(a$)+%1)=chr$(85+K65)
+REM   de=%0
+ REM  REM exec drawblock
+REM
+REM endproc
+
+
+REM proc schraeg_oben_links_oben2
+REM   a$=chr$(72+K65)
+REM   a$(%2)=chr$(73+K65)
+REM   de=%0
+REM   REM exec drawblock
+REM endproc
+
+REM proc schraeg_unten_links_unten2
+REM   a$=chr$(84+K65)
+REM   a$(%2)=chr$(85+K65)
+REM   de=%0
+REM   REM exec drawblock
+REM endproc
+
+
+
+
+REM proc plate3x3 :REM. Eckige Plate
+REM exec drawblock
+REM endproc
+
+
+proc house4x4
+  a$="ABCD-EFGG-HIGG-JKGG"
+  de=K15
+  REM exec drawblock
+endproc
+
+proc house4x3_quadrat
+  a$="ABCD-HIGG-JKGG"
+  de=K15
+  REM exec drawblock
+endproc
+
+proc house4x2_oben
+  a$="ABCD-EFGG"
+  de=K15
+  REM exec drawblock
+endproc
+
+proc house4x2_unten
+  a$="HIGG-JKGG"
+  de=K15
+  REM exec drawblock
+endproc
+
+proc startbahn
+  a$="CAAAA-CBBBB-CDDDD"
+  de=26
+  REM exec drawblock
+endproc
+
+proc landebahn1
+  a$="A-B-D"
+  de=26
+  REM exec drawblock
+endproc
+
+proc landebahn5
+  a$="AAAAA-CBBBB-DDDDD"
+  de=26
+  REM exec drawblock
+endproc
+
+proc landebahn_pfeil
+  a$="A-C-D"
+  de=26
+  REM exec drawblock
+endproc
+
+proc jet
+  a$="ABC-DEF-GHI"
+  de=30
+  REM exec drawblock
+endproc
+
+proc jet2
+  a$="ABC-DEF-GHI"
+  de=112
+  REM exec drawblock
+endproc
+
+proc explodierenderJet
+  a$="ABC-DEF-GHI"
+  de=39
+  REM exec drawblock
+endproc
+
+proc landebahnschmal
+  a$="AAAAA-DDDDD"
+  de=26
+  REM exec drawblock
+endproc
+
+
+proc jetSchmal
+  a$="ABC-GHI"
+  de=30
+  REM exec drawblock
+endproc
+
+proc jetSchmalExplode
+  a$="ABC-GHI"
+  de=39
+  REM exec drawblock
+endproc
+
+REM proc mast3x4
+REM  a$="A..-BDG-CEF-..H"
+REM  de=48
+REM   REM exec drawblock
+REM endproc
+
+REM proc steg
+REM  a$="AAA-BBB-CCC"
+REM  de=56
+REM  REM exec drawblock
+REM endproc
+
+REM proc innersteg
+REM  a$="A-.-B"
+REM  de=59
+REM  REM exec drawblock
+REM endproc
+
+REM proc gitter3x3
+REM  a$="ABC-DEF-GHI"
+REM  de=61
+REM  REM exec drawblock
+REM endproc
+
+REM proc gitter6x3
+REM  a$="ABBBBC-DEEEEF-GHHHHI"
+REM  de=61
+REM  REM exec drawblock
+REM endproc
+
+proc laengstgitter
+  a$=chr$(57+K65)
+  de=%0
+  REM exec drawblock
+endproc
+
+proc schraegen
+  a$="EFCD-ABGH-IJKL-MNOP"
+  de=70
+  REM exec drawblock
+endproc
+
+proc pfeil_links
+  a$="AB-CD"
+  de=86
+  REM exec drawblock
+endproc
+
+proc dot_2x2
+  a$="AB-CD"
+  de=90
+  REM exec drawblock
+endproc
+
+proc Cover3x3
+  a$="ABC-DEF-GHI"
+  de=94
+  REM exec drawblock
+endproc
+
+REM proc mast3x3
+REM  a$="ABC-DEF-.GH"
+REM  de=103
+REM  REM exec drawblock
+REM endproc
+
+proc dot_1x1
+  a$="A"
+  de=111
+  REM exec drawblock
+endproc
+
+REM proc landing_arrow
+REM  a$="A-A-A"
+REM  de=121
+REM  REM exec drawblock
+REM endproc
+
+proc ShipExplode
+  a$="ABC-.ABC-ABC"
+  de=125
+  REM exec drawblock
+endproc
+
+
+REM . startet bei x1 und y1
+REM . liefert width, height
+
+proc restoreBlock
+  if x1_b > %0
+    xw=usr($8b03, adr(b$), adr(c$), len(b$), %0, x1_b, y1_b, 1)
+    b$=""
+  endif
+endproc
+
+proc drawblock
+  if x1 > %0
+    xw=usr($8b03, adr(a$), adr(b$), len(a$), de, x1, y1, 0)
+    b$(len(a$)+%1)=""
+    x1_b=x1
+    y1_b=y1
+
+    width=xw & $ff
+    height=xw div K256
+    x1=x1+width
+  endif
+endproc
+
+
+!run

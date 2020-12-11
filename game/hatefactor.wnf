@@ -1,0 +1,341 @@
+// cdw by 'The Atari Team' 2020
+// licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
+//
+// OO    OO             OO                     OOOOOOOO                       OO
+// OO    OO             OO                     OO                             OO
+// OO    OO  OOOOOOOO OOOOOO  OOOOOOO          OO        OOOOOOOO  OOOOOOO  OOOOOO  OOOOOOO  OOOOOOOO
+// OOOOOOOO OO     OO   OO   OO     OO         OOOOOO   OO     OO OO     OO   OO   OO     OO OO     OO
+// OO    OO OO     OO   OO   OOOOOOOOO         OO       OO     OO OO          OO   OO     OO OO
+// OO    OO OO     OO   OO   OO                OO       OO     OO OO     OO   OO   OO     OO OO
+// OO    OO  OOOOOOOO    OOO  OOOOOOO          OO        OOOOOOOO  OOOOOOO     OOO  OOOOOOO  OO
+//
+
+INCLUDE HT:HATEFACT
+
+word hateFactor
+byte array statline_color[4] = @RS_TEXT_COLOR
+
+byte RANDOM = 53770
+// byte COLBK=53274
+
+byte array options[19] = @OPTION_ENEMY_MAX_QUANTITY
+
+byte enemyColor = @RS_ENEMY_COLOR
+byte strength
+byte quantity
+byte shotType
+byte enemyShot_speedup = @OPTION_ENEMY_SHOT_SPEEDUP
+byte orColor
+
+byte currentLevel = @CURRENT_LEVEL
+byte use_level = @USE_LEVEL
+
+procedure @hatefactorAnalyzer()
+begin
+  if options[14] == 1 then // @OPTION_HATEFACTOR_MODE
+  begin
+    orColor := $b0         // COLOR GREEN
+    if use_level == 1 then
+    begin
+      quantity := 2
+      shotType := 1
+      strength := 1
+    end
+    else
+    begin
+      quantity := options[0]
+      shotType := options[2]
+      strength := options[3]
+    end
+    enemyShot_speedup := 0
+
+    if hatefactor > 128 then
+    begin
+      enemyShot_speedup := 1
+    end
+
+    if hatefactor > 256 then
+    begin
+      orColor := $e0       // yellow
+      quantity := 3
+      enemyShot_speedup := 2 // 1/25 more
+    end
+
+    if hatefactor > 384 then
+    begin
+      orColor := $10       // yellow - red
+      enemyShot_speedup := 4
+    end
+
+    if hatefactor > 512 then
+    begin
+      orColor := $20       // red
+      quantity := 4
+      enemyShot_speedup := 6
+    end
+
+    if hatefactor > 640 then // ---------- Shot type 2 ------------
+    begin
+      orColor := $30       // dark red
+      shotType := 2        // tripple shot
+      enemyShot_speedup := 2 // 1/10
+    end
+
+    if hatefactor > 768 then
+    begin
+      orColor := $80       // blue
+      enemyShot_speedup := 3 // 1/10
+      strength := 2
+    end
+
+    if hatefactor > 896 then
+    begin
+      orColor := $70       // blue - violett
+      enemyShot_speedup := 4
+    end
+
+    if hatefactor > 1024 then
+    begin
+      orColor := $60       // violett
+      strength := 3
+      enemyShot_speedup := 3
+    end
+
+    if hatefactor > 1152 then
+    begin
+      orColor := $50       // violett - red
+      enemyShot_speedup := 4
+    end
+    if hatefactor > 1280 then // ---------- Shot type 3 ------------
+    begin
+      enemyShot_speedup := 2
+      shotType := 3        // killer shot
+      strength := 5
+    end
+    if hatefactor > 1408 then
+    begin
+      enemyShot_speedup := 3
+    end
+    if hatefactor > 1536 then
+    begin
+      enemyShot_speedup := 4
+    end
+    if hatefactor > 1664 then
+    begin
+      enemyShot_speedup := 5
+    end
+
+    // Die Hate Changed Werte nur setzen, wenn Hate-Mode an ist
+
+    options[0] := quantity   // @OPTION_ENEMY_MAX_QUANTITY
+    options[2] := shotType   // @OPTION_ENEMY_SHOT_TYPE
+    if use_level == 1 then
+    begin
+      if currentLevel != 0 then    // wenn God-mode, dann bleibt God-mode!
+        options[3] := strength   // @OPTION_ENEMY_SHOT_STRENGTH
+    end
+    else
+    begin
+      if options[3] != 0 then    // wenn God-mode, dann bleibt God-mode!
+        options[3] := strength   // @OPTION_ENEMY_SHOT_STRENGTH
+    end
+
+    enemyColor := $0c ! orColor
+    statline_color[2] := enemyColor
+  end
+end
+
+
+word wordvalue
+
+procedure @addHatefactor(wordvalue)
+begin
+  hatefactor := hatefactor + wordvalue
+
+  if hatefactor < 0 then
+    hatefactor := 0
+end
+
+byte value
+byte valuelow
+byte valuehigh
+
+byte array timeStripes[1] = [32, 62, 61, 60] // kein Strich, einer, zwei, drei Striche
+string timeLine = ['\3%%     '] // %% ist ein Uhrsymbol
+byte i,index
+
+// values von 0 - 19 werden unterstuetzt
+procedure createTimeLine(value)
+begin
+  valuelow := value & 3
+  valuehigh := value / 4
+
+  if valuehigh > 4 then
+    valuehigh := 4
+
+  for i:=4 to 8 do timeLine[i] := ' '
+
+  index := 8
+  for i := 1 to valueHigh do
+  begin
+    timeLine[index] := '&' // vier Striche
+    index := index - 1
+  end
+
+  timeLine[index] := timeStripes[valueLow]
+
+end
+
+word missionTime = @RS_MISSION_TIME
+word statusTime = @RS_STAT_TIME
+byte timeValue = @RS_STAT_TIME_STATUS
+byte timevalue_old
+
+procedure @calcTimeValue()
+begin
+  statusTime := statusTime - 1
+  if statusTime == 0 then
+  begin
+    if timeValue > 0 then
+    begin
+      timeValue := timeValue - 1
+      statusTime := missionTime
+    end
+  end
+end
+
+procedure showTimeValue()
+begin
+  @calcTimeValue()
+
+  if timevalue != timevalue_old then
+  begin
+    createTimeLine(timevalue)
+
+    @fast_gotoxy(16,0)
+    @printff(adr:timeline)
+
+    timevalue_old := timevalue
+  end
+end
+
+byte tat_xpos = @RS_TAT_XPOS
+byte mission_failed = @RS_MISSION_FAILED
+byte mission_failed_old
+byte shoots
+byte shoots_old
+
+byte bcd_current_score1 = @bcd_current_score1
+byte bcd_current_score2 = @bcd_current_score2
+byte bcd_current_score3 = @bcd_current_score3
+
+word destroyedJets, destroyedEnemies
+byte bcd_current_score1_old
+
+procedure showMissionStatusInGame()
+begin
+  // @INIT_FASTSCREEN($8c03)
+  @init_fastscreen($1003)  // MEMORY_ TODO:
+
+  shoots := 0 + @getDestroyedJets() + @getKilledEnemies()  // TODO: expression bug with functions
+
+  // Shoots nur aendern, wenn diese sich geaendert haben
+  if shoots != shoots_old then
+  begin
+
+    destroyedJets := 0 + @getJetsToDestroy() - @getDestroyedJets()
+    if destroyedJets < 0 then
+      destroyedJets := 0
+
+    destroyedEnemies := 0 + @getEnemiesToDestroy() - @getKilledEnemies()
+    if destroyedEnemies < 0 then
+      destroyedEnemies := 0
+
+    @fast_gotoxy(2,0)
+    @printff('\1#%d \2$%d  ', destroyedJets, destroyedEnemies)
+
+    shoots_old := shoots
+  end
+
+  showTimeValue()
+
+//  @inc_current_score()
+// Score nur aktualisieren, wenn sie sich geaendert hat
+  if bcd_current_score1 != bcd_current_score1_old then
+  begin
+    @fast_gotoxy(9,0)
+    @printff('%x%x%x ', bcd_current_score3, bcd_current_score2, bcd_current_score1)
+    bcd_current_score1_old := bcd_current_score1
+  end
+
+//  @checkMissionStatus()
+
+//  if mission_failed != mission_failed_old then
+//  begin
+//    @fast_gotoxy(18,0)
+//    if mission_failed == 0 then
+//    begin
+//      @printff('DONE')
+//    end
+//    mission_failed_old := mission_failed
+//  end
+end
+
+
+byte hatefactorwait
+byte hf_getdown = @OPTION_HF_GETDOWN
+
+procedure @hatefactordecrease()
+begin
+  showMissionStatusInGame()
+
+  hatefactorwait := hatefactorwait - 1
+  if hatefactorwait == 0 then
+  begin
+    hatefactorwait := hf_getdown // options[15] // @OPTION_HATEFACTOR_WAIT
+
+    @addhatefactor(-1)
+  end
+
+  if hatefactor > 1536 then
+  begin
+    enemyColor := $0c ! RANDOM
+  end
+
+end
+
+
+word starterHateFactor = @START_HATE_FACTOR
+byte shipColor2 = @RS_SHIP_COLOR2
+
+procedure @initHateFactor()
+begin
+  tat_XPos := 116
+
+  hateFactor := starterHateFactor
+  hatefactorwait := 1
+  shoots_old := 255
+
+  bcd_current_score1_old := bcd_current_score1 + 1
+
+  // init time
+  statusTime := missionTime
+  timeValue := 19
+  timevalue_old := 20
+
+  statline_color[1] := shipColor2 & $f0 ! $08
+  statline_color[3] := $84
+end
+
+byte array enemyEncountered_score_leveladd[1] = [$00,$01,$02,$03,$04,$05,$06,$07,$08]
+procedure @add_score_enemyEncountered()
+begin
+  @add_current_score(enemyEncountered_score_leveladd[currentLevel])
+end
+
+byte array jetEncountered_score_leveladd[1] = [$00,$02,$04,$06,$08,$10,$12,$14,$16]
+
+procedure @add_score_jetEncountered()
+begin
+  @add_current_score(jetEncountered_score_leveladd[currentLevel])
+end

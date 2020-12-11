@@ -1,0 +1,140 @@
+// cdw by 'The Atari Team' 2020
+// licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
+//
+// Binary Loader for 64kb
+// This loader is be able to load Atari com files
+// to addresses over $c000.
+// You must include simple-vbi.inc
+// only if endaddress is over $c000, the buffer version is used
+// switch to OS-ROM, load ~1kb (4 * 253) bytes is a buffer which must be in RAM
+// activate the OS-RAM and move this ~1kb to the right RAM address.
+// 738 (Init) address will also called after it is found.
+
+INCLUDE bin:BINLOAD
+
+word filename
+byte first, second
+word startaddress, endaddress
+byte status
+byte kan
+word length, oldlength
+word readlength, sum_readlength
+word address
+word bufferAddress
+word bytesToRead
+
+// word screen
+
+procedure getFirstAndSecondAndMakeWord()
+begin
+  @activate_rom()
+  first := @get(kan)
+  second := @get(kan)
+  @activate_ram()
+  address := @makeword(first, second)
+end
+
+procedure @binload(filename, bufferAddress)
+begin
+//  startAddressIsSet := 0
+  kan:=1
+
+//  screen := $bc40
+//  @poke(screen, 0)
+//  @init_fastscreen(screen)
+//  @INIT_SET_BYTES_PER_LINE(40)
+//  @move (screen, screen + 1, 959)
+//  @printff('\n\n')
+
+  @activate_rom()
+  status := @open(kan,4,0,filename)
+  @activate_ram()
+
+  if status < 128 then
+  begin
+    while status < 128 do
+    begin
+      // Datenheader einlesen (4-6 bytes)
+      getFirstAndSecondAndMakeWord()
+      startaddress := address
+      if startaddress == -1 then
+      begin
+        getFirstAndSecondAndMakeWord()
+        startaddress := address
+      end
+
+      getFirstAndSecondAndMakeWord()
+
+      if first >= 0 and second >= 0 then
+      begin
+        endaddress := address
+
+        // read the whole data block
+        length := endaddress - startaddress + 1
+        oldlength := length
+
+        if @greaterThan(endaddress, $9000) == 1 then
+        begin
+          sum_readlength := 0
+          repeat
+            if length > 1012 then
+              bytesToRead := 1012
+            else
+              bytesToRead := length
+
+            @activate_rom()
+            readlength := @bget(kan, bufferAddress, bytesToRead) // Ein Stueck der Daten lesen, max 1012 Bytes (4 sektoren)
+            @activate_ram()
+
+            sum_readlength := sum_readlength + readlength
+
+//            @printff('s:%X r:%d l:%d\n', startaddress, bytesToRead, readlength)
+
+            @move(bufferAddress, startaddress, bytesToRead)      // verschiebe die Daten in den Speicher
+
+            startaddress := startaddress + bytesToRead
+            length := length - bytesToRead
+          until length == 0
+
+          readlength := sum_readlength
+          length := oldlength
+        end
+        else
+        begin
+          @activate_rom()
+          readlength := @bget(kan, startaddress, length)      // Datei einlesen
+          @activate_ram()
+//          @printff('s:%X r:%d l:%d\n', startaddress, length, readlength)
+        end
+
+        if readlength != length then
+        begin
+          status := 136
+        end
+
+        if startaddress == 738 then
+        begin
+          @start_INITAD()
+        end
+
+//      if startaddress == 736 then
+//      begin
+//        startAddressIsSet := 1
+//      end
+      end
+      else
+      begin
+        status := 136
+      end
+    end
+  end
+  @activate_rom()
+  @close(kan)
+  @activate_ram()
+
+//  if status < 128 and startAddressIsSet == 1 then
+//  begin
+//    @start_RUNAD()
+//  end
+
+end

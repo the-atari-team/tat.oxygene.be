@@ -1,0 +1,345 @@
+REM cdw by 'The Atari Team' 2020
+REM licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
+
+REM YES, this is TurboBasic without line numbers, use xldir to insert into ATR-Disk
+REM it will create line numbers for you and remove every REM to save memory
+
+REM Initialisierung
+POKE 82,%0:GRAPHICS %0
+REM ------------------------------
+k4=%3+%1:k5=k4+%1:K6=%2*%3
+K8=%2+K6:K13=13:K16=%2*K8:K256=K16*K16:K255=K256-%1
+DIM KLEINST(%1),value(K255)
+DIM A$(K16)
+DIM SD$(%3),DD$(%3),FILE$(K13)
+DIM GET$(K16),PACKEDNAME$(K16),E$(300)
+LET PUT_MAXLEN=FRE(%0)-$0800
+DIM PUT$(PUT_MAXLEN)
+REM ------------------------------
+REM FILENAME
+? "     ---- Ship-Packer v1.32 ----"
+? "cdw by 'The Atari Team'  1990 - 2020"
+? :? " Dieser Packer komprimiert mit Hilfe":? " des XY-Happy Algorithmus Programms."
+? :?
+rem INPUT " Filename (name) ",FILE$
+let fullpercent=%0
+gr.1
+POKE 752,%1:REM CURSOR AUS
+TIME$= "000000"
+n=%0
+REM
+REM TEST!
+REM let startadr=$9800+$4000
+REM let endadr=$b9ff+$4000
+rem
+REM file$="SHIP-1.DAT"
+REM file$(6,6)="M"
+REM exec compress
+rem
+for f=%1 to 9
+  let startadr=$9800+$4000
+  let endadr=$b9ff+$4000
+  file$="SHIP-1.DAT"
+  file$(6,6)=chr$(f + asc("0"))
+  exec compress
+  fullpercent=fullpercent + percent
+  n=n+%1
+next f
+for f=%0 to 25
+  let startadr=$9800+$4000
+  let endadr=$b9ff+$4000
+  file$="SHIP-1.DAT"
+  file$(6,6)=chr$(f + asc("A"))
+  exec compress
+  fullpercent=fullpercent + percent
+  n=n+%1
+next f
+REM
+?#k6;"packrate: ";int(fullpercent/n);"%   "
+?#k6;"gesamtzeit: ";int(time/50);"s   "
+REM
+poke 752,%0
+open #%3,k4,%0,"D:OS.TXT"
+input #%3,a$
+close #%3
+if a$="Linux" then pause 300*50:POKE $600,%2:dpoke $601,$6068:?usr($600):REM $02, PLA, RTS
+REM
+end
+REM ------------------------------
+proc compress
+  let starttime=time
+  rem
+  LET GET$="H2:"
+  LET GET$(LEN(GET$)+%1)=FILE$
+  LET DOT=INSTR(GET$,".")
+  IF DOT=%0
+    LET DOT=LEN(GET$)+%1
+    LET GET$(DOT)=".COM"
+  ENDIF
+  rem wir nutzen jetzt H2: (Schreiben auf Harddisk)
+  LET PACKEDNAME$="H2:"
+  LET PACKEDNAME$(LEN(PACKEDNAME$)+%1)=FILE$
+  LET PACKEDNAME$(DOT)=".PAK"
+rem ------------------------------
+  poke 77,%0
+  percent=%0
+  a$=get$
+  exec fileexist
+  if e=%0
+    EXEC Kleinstwertermittlung
+    EXEC KOMPRESSION
+    EXEC SHOW_ADR
+    EXEC MAKE_LOADFILE
+    let endtime=time
+    ?#6
+    ?#6;"zwischenzeit ";int((endtime-starttime)/50);"s   "
+  endif
+ENDproc
+rem ------------------------------
+proc fileexist
+  ?"check ";a$
+  trap #doesnotexist
+  e=%0
+  open #%1,4,%0,a$
+  go# enderror
+  #doesnotexist
+  e=170
+  #enderror
+  close #%1
+endproc
+rem
+PROC KOMPRESSION
+  position %0,7
+  ? #K6;"KOMPRESSION        "
+  Y=8:rem PEEK(84)
+  L=%0:C=%0:AD=%0
+  OPEN #%1,4,%0,GET$
+  get #%1,OLDWERT     :REM 1. Wert einlesen
+
+  if OLDWERT=$ff    :REM scheint einen Header zu haben
+    ?"found header"
+    get #%1,egal      :REM diesen Header ueberlesen wir einfach
+    if egal<>255 then ?"ERROR: ";FILE$;" falsch"
+    GET #%1,egal,egal,egal,egal
+    GET #%1,OLDWERT
+  endif
+rem
+  REM init put$
+  LET PUT$=CHR$(255)
+  LET PUT$(LEN(PUT$)+%1)=CHR$(255)
+  LET PUT$(LEN(PUT$)+%1)="...."
+rem  GADR=%0
+  REPEAT
+    REM Hole Byteanzahl
+    ANZ=%0
+    WERT=OLDWERT
+REM    ?"$";hex$(gadr);" wert ";wert;
+REM    AD=GADR
+    REPEAT
+      AD=AD+%1
+      ANZ=ANZ+%1
+      GET #%1,OLDWERT
+    UNTIL OLDWERT<>WERT OR ANZ=K255 OR AD=LDAT
+REM   ?" anzahl ";anz;
+    IF ANZ>%2 AND WERT=%0
+REM      ?" 0 pack"
+      X=Y_BYTE:EXEC PUTBYTE
+      X=ANZ:EXEC PUTBYTE
+      L=L+%2
+    ELSE
+      IF ANZ>%3 OR WERT=X_BYTE OR WERT=Y_BYTE
+REM        ?" ";wert;" pack"
+        X=X_BYTE:EXEC PUTBYTE
+        X=ANZ:EXEC PUTBYTE
+        X=WERT:EXEC PUTBYTE
+        L=L+%3
+      ELSE
+REM        ?" ";wert
+        FOR A=%1 TO ANZ
+          X=WERT:EXEC PUTBYTE
+          L=L+%1
+        NEXT A
+      ENDIF
+    ENDIF
+rem    GADR=GADR+ANZ
+    C=C+%1
+    IF C=400:C=%0
+      let percent= 100-L/(AD/100)
+      POSITION %0,Y
+         ? #K6;"  GEPACKT: ";L;" ";int(percent);"% "
+      POSITION %0,Y+%1
+      ? #K6;"UNGEPACKT: ";AD;"  "
+      POSITION %0,Y+%2
+      ? #K6;"  GESPART: ";AD-L;"  "
+    ENDIF
+  UNTIL AD=LDAT
+  LDAT=L-%1
+  CLOSE #%1
+  LET newstartadr=ENDADR-LDAT
+  REM Adressen einfuegen
+  LET PUT$(%3,%3)=CHR$(newstartadr MOD K256)
+  LET PUT$(k4,k4)=CHR$(newstartadr DIV K256)
+  LET PUT$(k5,k5)=CHR$((ENDADR) MOD K256)
+  LET PUT$(k6,k6)=CHR$((ENDADR) DIV K256)
+  rem
+  rem Wir koennten den Entpacker anpassen und d4-d7 ueber einen extra block schreiben
+  rem kostet 8 byte statt 4*5 =20 bytes
+  rem
+  REM Header füer entpacker
+  let put$(len(put$)+%1)=CHR$($400 MOD K256)
+  let put$(len(put$)+%1)=CHR$($400 DIV K256)
+  let newend = $400+121-%1
+  let put$(len(put$)+%1)=CHR$(newend MOD K256)
+  let put$(len(put$)+%1)=CHR$(newend DIV K256)
+  rem
+  rem Der Entpacker
+  E$="................"
+  E$(%2,%2)=CHR$(startadr MOD K256)
+  E$(K6,K6)=CHR$(startadr DIV K256)
+  E$(10,10)=CHR$(newstartadr MOD K256)
+  E$(14,14)=CHR$(newstartadr DIV K256)
+  AD=$400
+  E$(LEN(E$)+%1)="....."
+  E$(LEN(E$)+%1)=CHR$(X_BYTE)
+  E$(LEN(E$)+%1)=".........."
+  A=AD+$62:EXEC APPEND_A
+  E$(LEN(E$)+%1)="..."
+  A=AD+$57:EXEC APPEND_A
+  E$(LEN(E$)+%1)="."
+  A=AD+$47:EXEC APPEND_A
+  E$(LEN(E$)+%1)="."
+  E$(LEN(E$)+%1)=CHR$(Y_BYTE)
+  E$(LEN(E$)+%1)="........."
+  A=AD+$62:EXEC APPEND_A
+  E$(LEN(E$)+%1)="..."
+  A=AD+$57:EXEC APPEND_A
+  E$(LEN(E$)+%1)="."
+  A=AD+$47:EXEC APPEND_A
+  E$(LEN(E$)+%1)="..........."
+  A=AD+$57:EXEC APPEND_A
+  E$(LEN(E$)+%1)="..."
+  A=ENDADR+%1
+  E$(LEN(E$)+%1)=CHR$(A MOD K256)
+  E$(LEN(E$)+%1)="..."
+  E$(LEN(E$)+%1)=CHR$(A DIV K256)
+  E$(LEN(E$)+%1)="....................................."
+  rem laenge entpacker 121 Bytes
+  rem schreibe init adresse (738, 739)
+REM  E$(LEN(E$)+%1)="...."
+  A=738:EXEC APPEND_A
+  A=739:EXEC APPEND_A
+  A=$400:EXEC APPEND_A
+  restore#entpacker
+  i=%1
+  repeat
+    read a$
+    if a$<>"XX"
+      if e$(i,i)=".":REM nur wenn an der Stelle ein '.' ist Wert manipulieren
+        e$(i,i)=chr$(dec(a$))
+      endif
+      i=i+%1
+    endif
+  until a$="XX"
+ENDPROC
+rem ------------------------------
+PROC Kleinstwertermittlung
+  position %0,4
+  ? #K6;"KLEINSTWERTE SUCHEN      "
+  REM File oeffnen, Adressraum lesen
+  OPEN #%1,4,%0,GET$
+.  GET #%1,egal,egal,A,B
+.  LET startadr=A+K256*B
+.  GET #%1,A,B
+.  LET ENDADR=A+K256*B
+  LDAT=ENDADR-startadr
+  let onepercent=ldat/100
+  REM Festlegung
+  a=%0:d=%0
+  FOR C=%0 TO LDAT
+    GET #%1,B
+    value(B)=value(B)+%1
+    a=a+%1
+    if a > onepercent
+      a=%0:d=d+%1
+      POSITION %0,5
+      ?#K6;d;"%               "
+    endif
+  NEXT C
+  REM suche 2 Werte, die am wenigsten vorkommen
+  FOR B=%0 TO %1
+    WERT=65535
+    FOR A=%0 TO K255
+      IF value(A)<WERT THEN WERT=value(A):MIN=A
+    NEXT A
+    KLEINST(B)=MIN
+    value(MIN)=65535:rem Damit wir den kleinsten nicht nochmal finden fett machen
+  NEXT B
+  X_BYTE=KLEINST(%0)
+  Y_BYTE=KLEINST(%1)
+  REM Hauptansprung einlesen
+  TRAP #GET_ERROR
+  REPEAT :GET #%1,A,B:AD=A+256*B
+  UNTIL AD<$FFFF:GET #%1,A,A,A,B
+  IF AD=736 THEN HAUPTADR=A+256*B
+  # GET_ERROR
+  CLOSE #%1
+  TRAP 40000
+ENDPROC
+rem ------------------------------
+REM Erstelle Ladbares File
+PROC MAKE_LOADFILE
+  IF HAUPTADR
+    A=HAUPTADR
+    E$(LEN(E$)+%1)="...."
+    EXEC APPEND_A
+  ENDIF
+  OPEN #%1,8,%0,PACKEDNAME$:? #%1;PUT$;E$;:CLOSE #%1
+ENDPROC
+rem ------------------------------
+REM Fuege A als Word an
+PROC APPEND_A
+  E$(LEN(E$)+%1)=CHR$(A MOD K256)
+  E$(LEN(E$)+%1)=CHR$(A DIV K256)
+ENDPROC
+rem ------------------------------
+PROC SHOW_ADR
+  ? #K6;"NORMALKOMPRIMIERT"
+  ? #K6;" startadr    $";HEX$(startadr)
+  ? #K6;" newstartadr $";HEX$(newstartadr)
+  ? #K6;" endadr      $";HEX$(ENDADR)
+ENDPROC
+rem ------------------------------
+REM Schreibe in Put$
+PROC PUTBYTE
+  LET PUT$(LEN(PUT$)+%1)=CHR$(X)
+ENDPROC
+rem ------------------------------
+A=%0:L=3020
+? L;" D. ";
+FOR I=%1 TO LEN(E$)
+  ? HEX$(ASC(E$(I,I)));",";
+  A=A+%1
+  IF A=8 THEN ? :A=%0:L=L+10:? L;" D. ";
+NEXT I
+# ENTPACKER
+DATA A9,00,85,D4,A9,98,85,D5
+DATA A9,A5,85,D6,A9,A8,85,D7
+DATA A0,00,B1,D6,C9,27,D0,12
+DATA C8,B1,D6,AA,C8,B1,D6,20
+DATA 62,BA,A2,02,20,57,BA,4C
+DATA 47,BA,C9,28,D0,11,C8,B1
+DATA D6,AA,A9,00,20,62,BA,A2
+DATA 01,20,57,BA,4C,47,BA,91
+DATA D4,E6,D4,D0,02,E6,D5,A2
+DATA 01,20,57,BA,A5,D4,C9,00
+DATA A5,D5,E9,BA,90,BA,60,18
+DATA 8A,65,D6,85,D6,90,02,E6
+DATA D7,60,86,D8,A0,00,91,D4
+DATA C8,C4,D8,D0,F9,18,A5,D4
+DATA 65,D8,85,D4,90,02,E6,D5,60
+rem DATA E2,02,E3,02,00,BA
+DATA XX
+
+
+
+!run

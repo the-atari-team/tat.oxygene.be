@@ -1,0 +1,367 @@
+// cdw by 'The Atari Team' 2020
+// licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
+
+INCLUDE au:AUDIOLST
+
+// Die abspielbaren audio Listen
+
+// 14,13,120,-3,18
+byte array raumershot_audio[1] = [
+  14, $A4,
+  27, $A8,
+  40, $A8,
+  53, $A8,
+  66, $A8,
+  79, $A8,
+  92, $A7,
+  105, $A7,
+  118, $A7,
+  131, $A7,
+  144, $A7,
+  157, $A6,
+  170, $A6,
+  183, $A6,
+  196, $A6,
+  209, $A6,
+  222, $A5,
+  235, $A5,
+  248, $A5,
+  $ff,$ff]
+
+// P.Finzels SOUND EDITOR Values:
+// Freq: 1
+// aenderung: 1   // kann ich nicht einstellen!
+// Lauf Anf: 120
+// aenderung: -3
+// modus: 5 bit poly
+// laenge: 20
+// LLA: gut genug fuer jetzt!
+// byte array raumershot_audio2[1] = [
+//   1, $24,
+//   2, $28,
+//   3, $28,
+//   4, $28,
+//   5, $28,
+//   6, $28,
+//   7, $27,
+//   8, $27,
+//   9, $27,
+//   10, $27,
+//   11, $27,
+//   12, $26,
+//   13, $26,
+//   14, $26,
+//   15, $26,
+//   16, $26,
+//   17, $25,
+//   18, $25,
+//   19, $25,
+//   20, $25,
+//   21, $25,
+//   22, $24,
+//   23, $24,
+//   24, $24,
+//   25, $24,
+//   $ff,$ff]
+
+
+// P.Finzels SOUND EDITOR Values:
+// Freq: 170
+// aenderung: 0.5   // kann ich nicht einstellen!
+// Lauf Anf: 240
+// aenderung: -5
+// modus: 17 bit poly
+// laenge: 45
+// LLA: gut genug fuer jetzt!
+
+byte array raumerExplosion_audio[1] = [
+ 0,0,
+ 0,0,
+ 0,0,
+ 0,0,
+ 0,0,
+ 0,0,
+ 0,0,
+ 0,0,
+ 0,0,
+ 0,0,
+ 0,0,
+ 0,0,
+ 0,0,
+ 0,0,
+ 0,0,
+ 0,0,
+ 0,0,
+ 0,0,
+ 0,0,
+
+ 170,$8f,
+ 170,$8f,
+ 171,$8f,
+ 171,$8e,
+ 172,$8e,
+ 172,$8e,
+ 173,$8d,
+ 173,$8d,
+ 174,$8d,
+ 174,$8c,
+
+ 175,$8c,
+ 175,$8c,
+ 176,$8b,
+ 176,$8b,
+ 177,$8b,
+ 177,$8a,
+ 178,$8a,
+ 178,$8a,
+ 179,$89,
+ 179,$89,
+
+ 180,$89,
+ 180,$88,
+ 180,$88,
+ 180,$88,
+ 180,$87,
+ 180,$87,
+ 180,$87,
+ 180,$86,
+ 180,$86,
+ 180,$86,
+
+ 180,$85,
+ 180,$85,
+ 180,$85,
+ 180,$84,
+ 180,$84,
+ 180,$84,
+ 180,$83,
+ 180,$83,
+ 180,$83,
+ 180,$82,
+
+ 190,$82,
+ 190,$82,
+ 190,$81,
+ 190,$81,
+ 190,$81,
+ $ff,$ff
+]
+// P.Finzels SOUND EDITOR Values:
+// Freq: 136
+// aenderung: 1
+// Lauf Anf: 240
+// aenderung: -8
+// modus: 5 & 17 bit poly
+// laenge: 30
+// LLA: gut genug fuer jetzt!
+
+byte array enemyExplosion_audio[1] = [
+  136, $0f,
+  137, $0f,
+  138, $0e,
+  139, $0e,
+  140, $0d,
+  141, $0d,
+  142, $0c,
+  143, $0c,
+  144, $0b,
+  145, $0b,
+  146, $0a,
+  147, $0a,
+  148, $09,
+  149, $09,
+  150, $08,
+  151, $08,
+  152, $07,
+  153, $07,
+  154, $06,
+  155, $06,
+  156, $05,
+  157, $05,
+  158, $04,
+  159, $04,
+  160, $03,
+  161, $03,
+  162, $02,
+  163, $02,
+  164, $01,
+  165, $01,
+  $ff,$ff]
+
+// P.Finzels SOUND EDITOR Values:
+// Freq: 100
+// aenderung: 5
+// Lauf Anf: 240
+// aenderung: -10
+// modus: 5 bit poly
+// laenge: 24
+// LLA: gut genug fuer jetzt!
+
+byte array jetExplosion_audio[1] = [
+  100, $2f,
+  105, $2e,
+  110, $2d,
+  115, $2d,
+  120, $2c,
+  125, $2b,
+  130, $2b,
+  135, $2a,
+  140, $2a,
+  145, $29,
+  150, $28,
+  155, $28,
+  160, $27,
+  165, $26,
+  170, $26,
+  175, $25,
+  180, $25,
+  185, $24,
+  190, $23,
+  195, $23,
+  200, $22,
+  205, $21,
+  210, $21,
+  $ff,$ff]
+
+byte array raumerShaker_audio[1] = [
+250, $84,
+$3b, $84,
+$7c, $84,
+$bd, $84,
+$fe, $83,
+
+$3f, $83,
+$80, $83,
+$c1, $83,
+$02, $82,
+$43, $82,
+
+$84, $82,
+$c5, $82,
+$06, $81,
+$47, $81,
+$88, $81,
+$c9, $81,
+$ff,$ff
+]
+
+
+byte array raumerSpeedup_audio[1] = [
+$19, $02,
+$19, $02,
+$19, $02,
+$19, $02,
+$19, $02,
+$19, $02,
+$19, $02,
+$19, $02,
+$19, $02,
+$19, $02,
+
+25, $02,
+24, $02,
+23, $02,
+22, $02,
+21, $02,
+20, $02,
+19, $02,
+18, $02,
+
+17, $01,
+16, $01,
+15, $01,
+14, $01,
+13, $01,
+12, $01,
+11, $01,
+10, $01,
+
+9, $01,
+8, $01,
+7, $01,
+6, $01,
+5, $01,
+4, $01,
+3, $01,
+2, $01,
+1, $01,
+
+$ff,$ff
+]
+
+byte array raumerSpeedup_audio_orig[1] = [
+$19, $04,
+$19, $04,
+$19, $04,
+$19, $04,
+$19, $04,
+$19, $04,
+$19, $04,
+$19, $04,
+$19, $04,
+$19, $04,
+
+25, $03,
+24, $03,
+23, $03,
+22, $03,
+21, $03,
+20, $03,
+19, $03,
+18, $03,
+
+17, $02,
+16, $02,
+15, $02,
+14, $02,
+13, $02,
+12, $02,
+11, $02,
+10, $02,
+
+9, $01,
+8, $01,
+7, $01,
+6, $01,
+5, $01,
+4, $01,
+3, $01,
+2, $01,
+1, $01,
+
+$ff,$ff
+]
+
+
+procedure @asp_raumershot()
+begin
+    @audio_start_play(adr:raumershot_audio)
+end
+
+procedure @asp_raumerShaker()
+begin
+    @audio_start_play(adr:raumerShaker_audio)
+end
+
+procedure @asp_jetExplosion()
+begin
+  @audio_start_play(adr:jetExplosion_audio)
+end
+
+procedure @asp_enemyExplosion()
+begin
+  @audio_start_play(adr:enemyExplosion_audio)
+end
+
+procedure @asp_raumerExplosion()
+begin
+  @audio_start_play2(adr:raumerExplosion_audio)
+end
+
+procedure @asp_raumerMove()
+begin
+  if @stick(0) != 15 then
+  begin
+    @audio_start_play2(adr:raumerSpeedup_audio)
+  end
+end

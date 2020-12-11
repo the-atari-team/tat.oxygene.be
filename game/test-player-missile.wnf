@@ -1,0 +1,2531 @@
+// cdw by 'The Atari Team' 2020
+// licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
+
+program oxygenbe
+
+// This is OXYGENE BE (part #2)
+
+// by 'The Atari Team'
+// (c) 1987 - 2020
+// rewritten from scratch
+//
+
+lomem=$1900
+
+// TODO: pmm ersetzen durch pd0 und die Assembler-Routinen umbauen
+
+// Global Variablen
+
+byte colorswitch=77
+byte mycritic=203
+
+byte initDone = @RS_INIT_DONE
+
+// --- GTIA ---
+// byte array HPOSP[4]=53248
+
+// byte array HPOSM[4]=53252
+
+byte array SIZEP[4]=53256       // fuer collisions
+
+// byte array COLPF[4]=53270
+
+byte COLBK=53274
+
+// byte array PCOLR[4]=704 // Schatten von 53266-9
+// byte array COLOR[5]=708 // Schatten von 53270-4
+
+byte HITCLR=53278 // loeschen der Kollisionsregister
+
+// --- POKEY ---
+
+byte RANDOM=53770 // $d20a
+
+// --- ANTIC ---
+
+byte PMBASE=54279 // 2kb Grenze ($800)
+
+byte GPRIOR=623
+
+// player missiles
+word PD0,PMM,PM0
+
+word address
+
+byte array options[19] = @OPTION_ENEMY_MAX_QUANTITY
+
+byte raumershot_hf_add = @OPTION_RAUMERSHOT_HF_ADD
+byte raumerhit_hf_sub = @OPTION_RAUMERHIT_HF_SUB
+byte jet_destroy_hf_add = @OPTION_JET_DESTORY_HF_ADD
+byte enemy_destroy_hf_add = @OPTION_ENEMY_DESTROY_HF_ADD
+
+
+// Keyboard
+byte CH=764
+
+byte KRPDEL=729
+byte KEYREP=730
+
+byte keycode  // was bei CH zurueckkommt
+byte key
+
+// gegner movement
+byte xr
+byte array yr[6]
+byte array stepyr[6]
+
+byte array enemyAnimation[6]
+byte array enemyAnimationIndex[6]
+word array currentEnemyAnimation[6]
+byte enemyShot_possible
+
+word speedw
+
+// OOOOOOO                                                             OOOOOO             OO                        OO    OO
+// OO    OO                                                           OO    OO                                      OO
+// OO    OO  OOOOOOOO OO     OO OOOO OOO   OOOOOOO  OOOOOOOO          OO    OO OOOOOOOO  OOO  OOOO OOO   OOOOOOOO OOOOOO OOO   OOOOOOO  OOOOOOOO
+// OO    OO OO     OO OO     OO OO OOO OO OO     OO OO     OO         OO    OO OO     OO  OO  OO OOO OO OO     OO   OO    OO  OO     OO OO     OO
+// OOOOOO   OO     OO OO     OO OO  O  OO OOOOOOOOO OO                OO    OO OO     OO  OO  OO  O  OO OO     OO   OO    OO  OO     OO OO     OO
+// OO   OO  OO     OO OO     OO OO  O  OO OO        OO                OOOOOOOO OO     OO  OO  OO  O  OO OO     OO   OO    OO  OO     OO OO     OO
+// OO    OO  OOOOOOOO  OOOOOOOO OO  O  OO  OOOOOOO  OO                OO    OO OO     OO OOOO OO  O  OO  OOOOOOOO    OOO OOOO  OOOOOOO  OO     OO
+//
+//
+
+// TODO: old, sind hier nur noch zum kopieren
+// byte array raumerAnimationOld[256] = [
+//
+//
+//   0,6,1, // Aufsteigen
+//   0,5,1,
+//   0,4,1,
+//   0,3,1,
+//   0,2,1,
+//   0,3,1,
+//   0,4,1,
+//   0,5,1,
+//
+//   1,4,0, // rotate up
+//   2,4,0,
+//   3,4,0,
+//   4,4,0,
+//   5,4,0,
+//   6,4,0,
+//   7,4,0,
+//   0,4,0,
+//
+//   7,4,0, // rotate down
+//   6,4,0,
+//   5,4,0,
+//   4,4,0,
+//   3,4,0,
+//   2,4,0,
+//   1,4,0,
+//   0,4,0,
+//
+//   18,4,0, // rotate
+//   17,4,0,
+//   16,4,0,
+//   15,4,0,
+//   14,4,0,
+//   13,4,0,
+//   12,4,0,
+//   11,4,0,
+//
+// ]
+
+//  OOOOOO                        OO
+// OO                             OO
+// OO       OO     OO  OOOOOOO  OOOOOO  OOOOOOO  OOOO OOO
+//  OOOOOO  OO     OO OO          OO   OO     OO OO OOO OO
+//       OO OO     OO  OOOOOOO    OO   OOOOOOOOO OO  O  OO
+//       OO  OOOOOOOO        OO   OO   OO        OO  O  OO
+//  OOOOOO         OO  OOOOOOO     OOO  OOOOOOO  OO  O  OO
+//          OOOOOOOO
+
+// ----------------------------------------------
+byte GRACTL = 53277
+byte SDMCTL = 559
+
+procedure initPlayerMissile()
+begin
+//  @printf('initPlayerMissile()\n')
+
+  GPRIOR:=1
+//  SDMCTL:=$3e // ~00111110 // 32+16+8+4+2
+  SDMCTL:=$22 // DMA + 40byte (normale Breite)
+  GRACTL:=3
+
+  PMBASE:=$F8   // Graphics 15 startet bei $A0
+  PD0:=$F800
+
+  PM0:=PD0+1024
+  PMM:=PM0-256
+
+  @clearPMfield(pd0)
+  @set_tat_in_player()
+  @initMiniRaumerInShield()
+end
+
+byte raumerIsInExplosion = @RAUMER_IN_EXPLOSION
+
+byte enemyCount
+
+// OOOOOOO
+// OO
+// OO      OOOOOOOO   OOOOOOO  OOOO OOO  OO     OO
+// OOOOO   OO     OO OO     OO OO OOO OO OO     OO
+// OO      OO     OO OOOOOOOOO OO  O  OO OO     OO
+// OO      OO     OO OO        OO  O  OO  OOOOOOOO
+// OOOOOOO OO     OO  OOOOOOO  OO  O  OO        OO
+//                                       OOOOOOOO
+
+byte array enemy0[1] = [
+  0, 0,
+  1, 1,
+  2, 2,
+  3, 3,
+  4, 4,
+  5, 5,
+  6, 6,
+  7, 7,
+  254 // Animation wiederholen
+]
+
+
+byte array enemy2[1] = [
+  16,
+  17,
+  18,
+  19,
+  254 // Animation wiederholen
+]
+
+// TODO: die sind mir zu haesslich und zu klein
+//byte array enemy2[1] = [
+//  20, 20,
+//  21, 21,
+//  22, 22,
+//  23, 23,
+//  24, 24,
+//  25, 25,
+//  26, 26,
+//  27, 27,
+//  254
+// ]
+
+byte array enemy3[2] = [0,0,254]
+
+byte array enemyExplosion[1] = [
+  8,8,
+  9,9,
+  10,10,
+  11,11,
+  12,12,
+  13,13,
+  14,14,
+  15,
+  253, // clear Enemy
+  255 // stop Animation
+]
+
+byte array enemyNoAnimation[1] = [
+  255, 255
+]
+
+byte enemyAnimationWait
+byte animation
+
+byte j,j1
+
+procedure moveEnemyUp(j)
+begin
+  j1 := j + 1
+  yr[j] := yr[j1]
+  stepyr[j] := stepyr[j1]
+  enemyAnimation[j] := enemyAnimation[j1]
+  enemyAnimationIndex[j] := enemyAnimationIndex[j1]
+  currentEnemyAnimation[j] := currentEnemyAnimation[j1]
+end
+
+
+
+//   OOOOO              OO                         OO     OO
+//  OO   OO                                        OO
+//  OO   OO OOOOOOOO   OOO   OOOO OOO   OOOOOOOO OOOOOO  OOO    OOOOOOO  OOOOOOOO
+//  OO   OO OO     OO   OO   OO OOO OO OO     OO   OO     OO   OO     OO OO     OO
+//  OO   OO OO     OO   OO   OO  O  OO OO     OO   OO     OO   OO     OO OO     OO
+//  OOOOOOO OO     OO   OO   OO  O  OO OO     OO   OO     OO   OO     OO OO     OO
+//  OO   OO OO     OO OOOOOO OO  O  OO  OOOOOOOO    OOO OOOOOO  OOOOOOO  OO     OO
+
+// wird jede 1/50s gerufen um evtl. einen
+// Animationsschritt weiter zu laufen
+// kann jederzeit abgebrochen werden
+byte count
+byte i
+
+procedure animationEnemy()
+begin
+  if enemyAnimationWait > 0 then
+  begin
+    enemyAnimationWait := enemyAnimationWait - 1
+    // return // TODO: hier könnte das return hinein?
+  end
+  else
+  begin
+    if enemyCount > 0 then
+    begin
+      count := enemyCount - 1
+      for i:=0 to count do
+      begin
+        animation := @getByteArray(currentEnemyAnimation[i], enemyAnimationIndex[i])
+        if animation != 255 then  // 255 = stop animation, external init
+        begin
+          if animation == 253 then
+          begin
+            enemyCount := enemyCount - 1
+            animation := 15     // leeres Enemy Bild
+            for j := i to count do
+            begin
+              moveEnemyUp(j)
+            end
+          end
+
+          if animation == 254 then // loop, Animation neu starten
+          begin
+            enemyAnimationIndex[i] := 0
+            animation := @getByteArray(currentEnemyAnimation[i], 0)
+          end
+          enemyAnimation[i] := animation
+          enemyAnimationIndex[i] := enemyAnimationIndex[i] + 1
+        end
+      end
+      enemyAnimationWait := 2      // jeder 2/50 (1/25s) neue Animation
+    end
+  end
+end
+
+byte isEnemyXAnimation
+byte enemyXAnimationIndex
+word currentEnemyXAnimation
+
+byte array enemyXAni16Sub[1] = [
+0,0,0,-1,
+0,0,-1,
+0,0,-1,
+0,-1,
+0,-1,
+-1,-1,-1,-1,-1,-1,
+0,-1,
+0,-1,
+0,0,-1,
+0,0,-1,
+0,0,0,-1,
+128
+]
+
+byte array enemyXAni16Add[1] = [
+0,0,0,1,
+0,0,1,
+0,0,1,
+0,1,
+0,1,
+1,1,1,1,1,1,
+0,1,
+0,1,
+0,0,1,
+0,0,1,
+0,0,0,1,
+128
+]
+
+// byte array enemyMove[1] = [
+// 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+// -1, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0,
+// 0, 0, 0, 0, 0, 1, 0, 0, 1, 0,
+// 128
+// ]
+
+procedure initEnemyXAnimation(address, i)
+begin
+  xr := i
+  currentEnemyXAnimation := address
+  enemyXAnimationIndex := 0
+  isEnemyXAnimation := 1
+  enemyShot_possible := 0
+end
+
+byte initEnemyCounter
+byte enemyGoAway
+byte raumerXDirection
+byte orColor
+
+byte currentEnemyIndex
+word currentEnemy
+
+procedure nextEnemy()
+begin
+  if currentEnemyIndex < 12 then
+  begin
+    if raumerXDirection == 1 then // raumer blick nach rechts
+      i := 28 + currentEnemyIndex
+    else
+      i := 16 + currentEnemyIndex
+
+    enemy3[0] := i
+    enemy3[1] := i
+    currentEnemy := adr:enemy3
+  end
+
+  if currentEnemyIndex == 12 then
+    currentEnemy := adr:enemy0
+
+//  if currentEnemyIndex == 10 then
+//    currentEnemy := adr:enemy2
+
+  currentEnemyIndex := currentEnemyIndex + 1
+
+  if currentEnemyIndex > 12 then
+    currentEnemyIndex := 0
+
+end
+
+
+//    OO               OO     OO
+//                            OO
+//   OOO   OOOOOOOO   OOO   OOOOOO
+//    OO   OO     OO   OO     OO
+//    OO   OO     OO   OO     OO
+//    OO   OO     OO   OO     OO
+//  OOOOOO OO     OO OOOOOO    OOO
+
+
+
+byte enemyXpos = @ENEMY_XPOS
+byte enemyColor = @RS_ENEMY_COLOR
+
+// Initialisiert den Enemy neu durch
+// ggf. vorher alles löschen
+// TODO: wie aufwendig wäre es von oben und unten neue kommen zu lassen?
+procedure initEnemy()
+begin
+//  @printf('initEnemy()\n')
+
+//  if options[5] == 0 then
+//    i := $cc // green
+//  if options[5] == 1 then
+//    i := $ec // yellow
+//  if options[5] == 2 then
+//    i := $8c // blue
+//  if options[5] == 3 then
+//    i := $3c // red
+
+  @hatefactorAnalyzer()
+
+  if options[14] == 0 then // @OPTION_HATEFACTOR_MODE
+  begin
+    if options[4] == 1 then  // @OPTION_ENEMY_RANDOM_COLOR
+      orColor := RANDOM & $f0
+    else
+    begin
+      if options[4] == 2 then
+      begin
+        orColor := orColor + 16
+      end
+      else
+      begin
+        orColor := options[5] * 16  // @OPTION_ENEMY_COLOR
+      end
+    end
+    enemyColor := $0c ! orColor
+  end
+
+  nextEnemy()
+
+  speedw := 1
+// x positionen fuer vertikale
+
+  enemyShot_possible := 0
+  enemyGoAway := 0
+
+  if raumerXDirection == 1 then
+  begin
+    xr := 149 // 160-8-3
+    initEnemyXAnimation(adr:enemyXAni16Sub, xr + 16)
+  end
+  else
+  begin
+    xr := 3
+    initEnemyXAnimation(adr:enemyXAni16Add, xr - 16)
+  end
+
+  // Anzahl der Enemies hier erledigen
+  if options[0] == 5 then    // sonderfall, einfach 2, 3, 4, 2, 3, ...
+  begin
+    initEnemyCounter := initEnemyCounter + 1
+    if initEnemyCounter > 4 then
+    begin
+      initEnemyCounter := 2
+    end
+  end
+  else
+    initEnemyCounter := options[0] // @OPTION_MAX_QUANTITY
+
+  // vertikale rechts
+  enemyCount := initEnemyCounter
+
+
+  yr[0]:=39
+  stepyr[0]:=1
+  currentEnemyAnimation[0] := currentEnemy // adr:enemy0
+  enemyAnimationIndex[0] := 0
+
+  currentEnemyAnimation[1] := currentEnemy // adr:enemy0
+  enemyAnimationIndex[1] := 0
+
+  yr[2]:=255
+  stepyr[2]:=0
+  currentEnemyAnimation[2] := adr:enemyNoAnimation
+  enemyAnimationIndex[2] := 0
+
+  yr[3]:=255
+  stepyr[3]:=0
+  currentEnemyAnimation[3] := adr:enemyNoAnimation
+  enemyAnimationIndex[3] := 0
+
+  yr[4]:=255
+  stepyr[4]:=0
+  currentEnemyAnimation[4] := adr:enemyNoAnimation
+  enemyAnimationIndex[4] := 0
+
+  if enemyCount == 2 then
+  begin
+    yr[1]:=156 // 176-20
+    stepyr[1]:=-1
+  end
+
+  if enemyCount == 3 then
+  begin
+    yr[1]:=72 // 18*4
+    stepyr[1]:=-1
+
+    yr[2]:=156 // 176-20
+    stepyr[2]:=-1
+    currentEnemyAnimation[2] := currentEnemy // adr:enemy0
+  end
+
+  if enemyCount == 4 then
+  begin
+    yr[1]:=72 // 18*4
+    stepyr[1]:=-1
+
+    yr[2]:=108 // 18*6
+    stepyr[2]:=1
+    currentEnemyAnimation[2] := currentEnemy // adr:enemy0
+
+    yr[3]:=156 // 176-20
+    stepyr[3]:=-1
+    currentEnemyAnimation[3] := currentEnemy // adr:enemy0
+  end
+
+  enemyAnimationWait := 0 // must at least 1
+end
+
+// byte proposeToInitEnemy // 1 bei naechster Gelegenheit initEnemy aufrufen
+
+procedure enemyXAnimation()
+begin
+  if isEnemyXAnimation == 1 then
+  begin
+    animation := @getByteArray(currentEnemyXAnimation, enemyXAnimationIndex)
+    if animation == 128 then
+    begin
+      isEnemyXAnimation := 0   // stop this xAnimation
+      if enemyGoAway == 1 then
+      begin // enemy ist weg, durch init wiederholen
+        @clearEnemy(pm0)
+        initEnemy()
+      end
+      else
+      begin // enemy ist da
+        enemyShot_possible := 1
+      end
+
+      // hin und her wobbeln
+      // initEnemyXAnimation(adr:enemyMove, xr)
+    end
+    else
+    begin
+      xr := xr + animation
+      enemyXpos := xr + 48
+
+      enemyXAnimationIndex := enemyXAnimationIndex + 1
+    end
+  end
+end
+
+
+
+//  OOOOOO  OO                    OO           OOOOOOO
+// OO       OO                    OO           OO
+// OO       OOOOOOOO   OOOOOOO  OOOOOO         OO      OOOOOOOO   OOOOOOO  OOOO OOO  OO     OO
+//  OOOOOO  OO     OO OO     OO   OO           OOOOO   OO     OO OO     OO OO OOO OO OO     OO
+//       OO OO     OO OO     OO   OO           OO      OO     OO OOOOOOOOO OO  O  OO OO     OO
+//       OO OO     OO OO     OO   OO           OO      OO     OO OO        OO  O  OO  OOOOOOOO
+//  OOOOOO  OO     OO  OOOOOOO     OOO         OOOOOOO OO     OO  OOOOOOO  OO  O  OO        OO
+//                                                                                   OOOOOOOO
+
+// simple -
+// double =
+// fächer >
+// killer ]
+
+byte x, y, height
+byte isEnemyShot
+byte enemyShot_x
+byte array enemyShot_y[3]
+byte enemyShot_step
+byte enemyShot_animation
+byte enemyShot_animation_wait
+byte enemyShot_y_wait
+byte enemyShot_type
+
+byte enemyShot_speedup = @OPTION_ENEMY_SHOT_SPEEDUP
+byte enemyShot_speedup_Wait
+byte enemyShot_whoFires
+
+word deltaEnemyShotToRaumer
+word delta
+
+byte raumerY
+
+byte array enemyShop_speedupList[1] = [0,25,10,8,4,2,1]
+
+procedure initEnemyShot()
+begin
+//  @printf('initEnemyShot()\n')
+
+  if enemyShot_possible == 1 and enemyCount > 0 then
+  begin
+    // Primitiver Algorithmus zum Auswaehlen, wer schiesst
+    deltaEnemyShotToRaumer := 255
+    enemyShot_whoFires := 0
+
+    // finde den enemy der am dichtesten dran ist
+    for i:=0 to enemyCount-1 do
+    begin
+      delta := @abs(@toWord(yr[i] - raumerY))
+      if delta < deltaEnemyShotToRaumer then
+      begin
+        enemyShot_whoFires := i
+        deltaEnemyShotToRaumer := delta
+      end
+    end
+
+    // explodiert der Enemy gerade, nicht mehr schießen
+    if currentEnemyAnimation[enemyShot_whoFires] == adr:enemyExplosion then
+      return 0
+
+    // ist die Entfernung > 9 nicht schießen
+    if options[1] == 2 and deltaEnemyShotToRaumer > 9 then
+      return 0
+
+    if options[1] == 1 and deltaEnemyShotToRaumer > 20 then
+      return 0
+
+    // wir ballern einfach
+
+    // ab hier steht fest, wir schießen
+    isEnemyShot := 1
+
+    enemyShot_speedup_Wait := enemyShop_speedupList[ enemyShot_speedup ]
+
+    @hatefactorAnalyzer()
+
+    enemyShot_type := options[2] // @OPTION_ENEMY_SHOT_TYPE
+
+    y := yr[enemyShot_whoFires]
+
+    if enemyShot_type == 3 then
+      y := y + 10
+
+    enemyShot_y[0] := y      // mitte
+    enemyShot_y[1] := y - 4  // oben
+    enemyShot_y[2] := y + 4  // unten
+
+    // wir beachten die aktuelle enemy x position und ballern von dort
+    if xr > 79 then
+    begin
+      enemyShot_x := xr - 2   // enemy ballert von rechts nach links
+      enemyShot_step := -1
+    end
+    else
+    begin
+      enemyShot_x := xr + 8   // enemy ballert von links nach rechts
+      enemyShot_step := 1
+    end
+
+    enemyShot_animation := 0
+    enemyShot_animation_wait := 1 // TODO: setzbar machen!
+    enemyShot_y_wait := 1 // must at least 1!
+  end
+end
+
+procedure animationEnemyShot()
+begin
+  enemyShot_animation_wait := enemyShot_animation_wait - 1
+  if enemyShot_animation_wait == 0 then
+  begin
+    enemyShot_animation := enemyShot_animation + 1
+    if enemyShot_animation > 7 then
+    begin
+      enemyShot_animation := 0
+    end
+    @setEnemyShotNumber(enemyShot_animation)
+    enemyShot_animation_wait := 4
+  end
+end
+
+procedure shotSpreizen()
+begin
+  // shot spreizen
+  enemyShot_y_wait := enemyShot_y_wait - 1
+  if enemyShot_y_wait == 0 then
+  begin
+    enemyShot_y[1] := enemyShot_y[1] - 1
+    enemyShot_y[2] := enemyShot_y[2] + 1
+    enemyShot_y_wait := 4
+  end
+end
+
+procedure shotTripple()
+begin
+  for i:=0 to 2 do
+  begin
+      @copyEnemyShot(pmm, enemyShot_x, enemyShot_y[i])
+  end
+  shotSpreizen()
+end
+
+procedure enemyShot()
+begin
+//  @printf('enemyShot()\n')
+
+  if isEnemyShot == 1 then
+  begin
+    enemyShot_x := enemyShot_x + enemyShot_step
+
+    if enemyShot_speedup_Wait != 0 then
+    begin
+      enemyShot_speedup_Wait := enemyShot_speedup_Wait - 1
+      if enemyShot_speedup_Wait == 0 then
+      begin
+        enemyShot_speedup_Wait := enemyShop_speedupList[enemyShot_speedup]
+        enemyShot_x := enemyShot_x + enemyShot_step
+      end
+    end
+
+    if enemyShot_type == 0 then
+    begin
+      @setEnemyShotNumber(8)
+      @copyEnemyShot(pmm, enemyShot_x, enemyShot_y[0])
+    end
+
+    if enemyShot_type == 1 then
+    begin
+      animationEnemyShot()
+      @copyEnemyShot(pmm, enemyShot_x, enemyShot_y[0])
+    end
+
+    if enemyShot_type == 2 then
+    begin
+      animationEnemyShot()
+      shotTripple()
+    end
+
+    if enemyShot_type == 3 then
+    begin
+      @ENEMYSHOT_KILLER(pmm, enemyShot_x, enemyShot_y[1], enemyShot_y[2])
+      shotSpreizen()
+    end
+
+    if @sgn(@toWord(enemyShot_step)) == 1 then
+    begin
+      // shot to the right
+      if enemyShot_x > 132 then    // 160 - 8 (player) - 20
+      begin
+        @clearEnemyShot(pmm)
+        isEnemyShot := 0
+      end
+    end
+    else
+    begin
+      // shot to the left
+      if enemyShot_x < 20 then
+      begin
+        @clearEnemyShot(pmm)
+        isEnemyShot := 0
+      end
+    end
+
+  end
+end
+
+
+
+//  OO   OO                                     OOOOOO
+//  OO   OO                                     OO   OO
+//  OO   OO OOOOOOOO          OOOOOOOO          OO   OO  OOOOOOO  OO     OO OOOOOOOO
+//  OO   OO OO     OO         OO     OO         OO   OO OO     OO OO     OO OO     OO
+//  OO   OO OO     OO         OO     OO         OO   OO OO     OO OO  O  OO OO     OO
+//  OO   OO OOOOOOOO          OO     OO         OO   OO OO     OO OO  O  OO OO     OO
+//   OOOOO  OO                OO     OO         OOOOOO   OOOOOOO   OOO OOO  OO     OO
+//          OO
+
+procedure upDownMovementGegner()
+begin
+//  @printf('upDownMovementGegner()\n')
+
+  if enemyCount == 0 then return 0
+
+  count := enemyCount - 1
+
+  for i:=0 to count do
+  begin
+    @copyEnemy(pmm, yr[i], enemyAnimation[i])
+  end
+
+  for i:=0 to count do
+  begin
+    if yr[i] != 255 then
+    begin
+      yr[i] := yr[i] + stepyr[i]
+
+      // kollisionstest nach oben Rand
+      if yr[i] <= 39 then   // TODO: ymin enemy
+      begin
+        yr[i] := 39
+        stepyr[i] := speedw
+      end
+
+      // kollisionstest nach unten Rand
+      if yr[i] > 164 then   // TODO: ymax enemy
+      begin
+        yr[i] := 164
+        stepyr[i] := -1 // @neg(speedw)
+      end
+
+      // kollisionstest nach unten (zum naechsten)
+      if @sgn(@toword(stepyr[i])) == 1 then
+      begin
+        if (yr[i] + 18) >= yr[i+1] then
+        begin
+          stepyr[i] := -1 // @neg(speedw)
+        end
+      end
+
+      // kollisionstest nach oben (zum vorherigen)
+      if i > 0 then
+      begin
+        if yr[i] <= yr[i-1]+18 then
+        begin
+          stepyr[i] := speedw
+        end
+      end
+    end
+  end
+
+  animationEnemy()
+  enemyXAnimation()
+
+end
+
+// OOOOOOO
+// OO    OO
+// OO    OO  OOOOOOOO OO     OO OOOO OOO   OOOOOOO  OOOOOOOO
+// OO    OO OO     OO OO     OO OO OOO OO OO     OO OO     OO
+// OOOOOO   OO     OO OO     OO OO  O  OO OOOOOOOOO OO
+// OO   OO  OO     OO OO     OO OO  O  OO OO        OO
+// OO    OO  OOOOOOOO  OOOOOOOO OO  O  OO  OOOOOOO  OO
+
+byte shakeX, shakeY
+word currentRaumerShaker
+byte raumerShakerIndex
+byte isRaumerShaker
+byte raumerShot_possible
+
+byte array raumerXYShake[1] = [
+1,0,
+0,1,
+-1,0,
+-1,0,
+0,1,
+1,1,
+1,0,
+1,-1,
+0,1,
+1,0,
+0,1,
+1,-1,
+0,0,
+-1,0,
+0,1,
+0,0,
+128,0
+]
+
+
+procedure initRaumerShaker(address)
+begin
+  if isRaumerShaker == 0 then
+  begin
+    currentRaumerShaker := address
+    raumerShakerIndex := 0
+    isRaumerShaker := 1
+    raumerShot_possible := 0
+    // @audio_start_play(adr:raumerShaker_audio)
+    @asp_raumerShaker()
+  end
+end
+
+procedure raumerShaker()
+begin
+  if isRaumerShaker == 1 then
+  begin
+    shakeX := @getByteArray(currentRaumerShaker, raumerShakerIndex)
+    shakeY := @getByteArray(currentRaumerShaker, raumerShakerIndex + 1)
+
+    if shakeX == 128 then
+    begin
+      isRaumerShaker := 0   // stop this xAnimation
+      shakeX := 0
+      shakeY := 0
+      raumerShot_possible := 1
+      // hin und her wobbeln
+      // initRaumerShaker(adr:raumerMove, xr)
+      if raumerIsInExplosion == 1 then
+      begin
+        initRaumerShaker(adr:raumerXYShake)
+      end
+    end
+    else
+    begin
+      raumerShakerIndex := raumerShakerIndex + 2
+    end
+  end
+end
+
+// raumerNumber, wait, raumerHeightAdd, raumerYAdd
+byte array sideSwitchToLookRightFromUp[1]=[
+  1,3,0,-1,
+  0,2,0,0,
+]
+byte array sideSwitchToLookRight[1]=[
+  0,1,-1,0, // side switch to look right
+  8,3,1,0,
+  9,2,1,0,
+  9,2,1,0,
+  10,4,0,0,
+  15,3,-1,0, // raumer steht auf dem Kopf blick rechts
+  15,1,-1,0,
+  254,1,0,0, // Richtungswechsel ist durch
+  255,0,0,0
+]
+
+byte array rightKippUpFromOverhead[1]=[
+  15,1,0,0, // raumer steht auf dem Kopf
+  14,4,0,0,
+  13,4,0,0,
+  12,4,0,0,
+  11,1,0,0,
+  255,0,0,0
+]
+
+byte array sideSwitchToLookLeftFromUp[1]=[
+  12,3,0,-1,
+  11,2,0,0,
+]
+byte array sideSwitchToLookLeft[1] = [
+  11,1,-1,0, // side switch to look left
+  19,3,1,0,
+  20,2,1,0,
+  20,2,1,0,
+  21,4,0,0,
+  4,3,-1,0, // raumer steht auf dem Kopf blick links
+  4,1,-1,0,
+  254,1,0,0, // Richtungswechsel ist durch
+  255,0,0,0
+]
+
+byte array leftKippUpFromOverhead[1]=[
+  4,1,0,0,
+  3,4,0,0,
+  2,4,0,0,
+  1,4,0,0,
+  0,1,0,0,
+  255,0,0,0
+]
+
+byte array leftKippUp[1] = [
+  0,1,0,0,
+  1,3,0,-1, // kipp up
+  2,2,0,-4,
+  255,0,0,0
+]
+
+byte array leftKippUpBack[1] = [
+  2,3,0,-4,
+  1,4,0,-1, // kipp up back
+  0,2,0,0,
+  255,0,0,0
+]
+
+byte array leftKippDownBack[1] = [
+  6,3,0,4,
+  7,4,0,1, // kipp down back
+  0,2,0,0,
+  255,0,0,0
+]
+
+byte array leftKippDown[1] = [
+  0,1,0,0,
+  7,3,0,1, // rotate down
+  6,2,0,4,
+  255,0,0,0
+]
+
+byte array rightKippUp[1] = [
+  11,1,0,0,
+  12,3,0,-1, // kipp up
+  13,2,0,-4,
+  255,0,0,0
+]
+
+byte array rightKippUpBack[1] = [
+  13,3,0,-4,
+  12,4,0,-1, // kipp up back
+  11,2,0,0,
+  255,0,0,0
+]
+
+byte array rightKippDownBack[1] = [
+  17,3,0,4,
+  18,4,0,1, // kipp down
+  11,2,0,0,
+  255,0,0,0
+]
+
+byte array rightKippDown[1] = [
+  11,1,0,0,
+  18,3,0,1, // kipp down
+  17,2,0,4,
+  255,0,0,0
+]
+
+byte array rightrotateup[1] = [
+  11,1,0,0,
+  12,3,0,0,
+  13,3,0,0,
+  14,3,0,0,
+  15,3,0,0,
+  16,3,0,0,
+  17,3,0,0,
+  18,3,0,0,
+  11,1,0,0,
+  255,0,0,0
+]
+
+byte array rightabsturz[1] = [
+
+   11,4,-1,0, // Absturz look right
+   11,3,-1,0,
+   11,2,-1,0,
+   11,2,-1,0,
+   11,1,-1,0,
+   11,1,-1,0,
+   11,1,-1,0,
+   11,1,-1,0,
+
+   22,4,0,0, // explode
+   23,4,0,0,
+   24,4,0,0,
+   25,4,0,0,
+   26,4,0,0,
+   27,54,0,0,
+
+   255,0,0,0
+]
+
+byte array leftabsturz[1] = [
+   0,4,-1,0, // Absturz look left
+   0,3,-1,0,
+   0,2,-1,0,
+   0,2,-1,0,
+   0,1,-1,0,
+   0,1,-1,0,
+   0,1,-1,0,
+   0,1,-1,0,
+
+   22,4,0,0, // explode
+   23,4,0,0,
+   24,4,0,0,
+   25,4,0,0,
+   26,4,0,0,
+   27,54,0,0,
+
+   255,0,0,0
+]
+
+byte array rightlanding[1] = [
+
+   11,8,-1,0, // landing look right
+   11,7,-1,0,
+   11,6,-1,0,
+   11,5,-1,0,
+   11,4,-1,0,
+   11,3,-1,0,
+   11,2,-1,0,
+   11,20,0,0,
+
+   255,0,0,0
+]
+
+
+//   OOOOO              OO                         OO     OO
+//  OO   OO                                        OO
+//  OO   OO OOOOOOOO   OOO   OOOO OOO   OOOOOOOO OOOOOO  OOO    OOOOOOO  OOOOOOOO
+//  OO   OO OO     OO   OO   OO OOO OO OO     OO   OO     OO   OO     OO OO     OO
+//  OO   OO OO     OO   OO   OO  O  OO OO     OO   OO     OO   OO     OO OO     OO
+//  OOOOOOO OO     OO   OO   OO  O  OO OO     OO   OO     OO   OO     OO OO     OO
+//  OO   OO OO     OO OOOOOO OO  O  OO  OOOOOOOO    OOO OOOOOO  OOOOOOO  OO     OO
+
+byte raumerIsInAnimation
+word raumerAnimationIndex
+byte raumerAnimationWait
+byte raumerHeightValue
+byte raumerHeight
+byte raumerAnimation
+byte raumerLastAnimation
+
+word raumerNeedRedraw
+// word t
+
+// Raumer movement
+byte landing = @RS_STAT_LANDING
+byte raumerX
+byte raumerYAdd
+word raumerCurrentAnimation
+
+byte raumerColorLight = @RS_RAUMER_COLOR_LIGHT
+byte raumerColorInner = @RS_RAUMER_COLOR_INNER
+byte raumerColorShadow = @RS_RAUMER_COLOR_SHADOW
+
+byte raumerOverhead // 1==Raumer steht über Kopf
+
+// wird jede 1/50s gerufen um evtl. einen
+// Animationsschritt weiter zu laufen
+// eine Animation wird nicht abgebrochen!
+procedure animationRaumer()
+begin
+//  @printf('animationRaumer()\n')
+
+  if raumerIsInAnimation != 0 then
+  begin
+    if raumerAnimationWait > 0 then
+    begin
+       raumerAnimationWait := raumerAnimationWait - 1
+    end
+    else
+    begin
+      raumerAnimation := @getByteArray(raumerCurrentAnimation, raumerAnimationIndex)
+      if raumerAnimation != 255 then
+      begin
+        if raumerAnimation == 254 then
+        begin
+          // @clearEnemy(pm0)
+          // initEnemy()
+          raumerOverhead := 1
+//          proposeToInitEnemy := 1
+        end
+        else
+        begin
+          @setRaumerNumber(raumerAnimation)
+          raumerLastAnimation := raumerAnimation
+
+          if raumerAnimation > 21 then
+          begin
+              raumerColorLight := $32  // TODO: Farbe Explosion
+              raumerColorInner := $1F
+          end
+
+          raumerHeightValue := @getByteArray(raumerCurrentAnimation, raumerAnimationIndex + 2) // geht leider nicht anders! Da die Funktion mehr als einen Parameter braucht.
+          raumerHeight := raumerHeight + raumerHeightValue
+          raumerYAdd := @getByteArray(raumerCurrentAnimation, raumerAnimationIndex + 3)
+        end
+        raumerAnimationWait := @getByteArray(raumerCurrentAnimation, raumerAnimationIndex+1)
+        raumerAnimationIndex := raumerAnimationIndex + 4
+
+      end
+      else
+      begin
+        raumerIsInAnimation := 0
+      end
+    end
+  end
+
+  raumerShaker()
+
+  // Berechne einen "Hash" ob Raumer neu gezeichnet werden muss
+  // i := raumerAnimation + raumerHeight + raumerX + raumerY + shakeX + shakeY
+
+  //if i != raumerNeedRedraw then
+  //begin
+    y := raumerY + raumerYAdd + shakeY
+    x := raumerX + shakeX
+
+    @copyRaumer(pmm, x, y, raumerHeight)
+  //  raumerNeedRedraw := i
+  //end
+end
+
+
+word raumerXPosition
+
+word raumerSpeedX
+byte raumerYDirection
+
+byte energyDecreaseWait
+
+// byte energySlowdown
+
+byte optionEnergySlowdown = @OPTION_ENERGY_SLOWDOWN
+byte optionFireSlowdown = @OPTION_FIRE_SLOWDOWN
+
+procedure initEnergyDecreaser()
+begin
+
+  if options[7] != 0 then // @OPTION_IS_ENERGY_SLOWDOWN
+    energyDecreaseWait := optionEnergySlowdown
+
+end
+
+byte raumerShotDecreaseWait
+
+procedure initRaumerShotDecreaser()
+begin
+  if options[8] != 0 then // @OPTION_IS_FIRE_SLOWDOWN
+    raumerShotDecreaseWait := optionFireSlowdown
+
+end
+
+//    OO               OO     OO
+//                            OO
+//   OOO   OOOOOOOO   OOO   OOOOOO
+//    OO   OO     OO   OO     OO
+//    OO   OO     OO   OO     OO
+//    OO   OO     OO   OO     OO
+//  OOOOOO OO     OO OOOOOO    OOO
+
+procedure initRaumer(x, y, height)
+begin
+//  @printf('initRaumer()\n')
+  initPlayerMissile()
+
+  raumerColorLight := $0f  // TODO: Farbe Raumer Rand
+  raumerColorInner := $34  // TODO: Farbe Raumer innen
+  raumerColorShadow := $00  // TODO: Farbe Schattenfarbe
+
+  raumerX:=x // 75
+  raumerY:=y // 96
+  raumerYAdd:=0
+
+  raumerXDirection := 1 // left
+  raumerSpeedX := 0
+  raumerXPosition := 0
+
+  @init_starpositions()
+  @setRaumerXPosition(raumerXPosition)
+
+  raumerHeight := height // 8
+  raumerAnimation := 11
+  raumerOverhead := 0
+  raumerLastAnimation := 0
+  raumerYDirection := 0
+
+  isRaumerShaker := 0
+  shakeX := 0
+  shakeY := 0
+
+  @setRaumerNumber(raumerAnimation)
+  @copyRaumer(pmm, raumerX, raumerY, raumerHeight)
+end
+
+
+//  OOOOOO                                                     OOOOO  OO                    OO
+//  OO   OO                                                   OO      OO                    OO
+//  OO   OO  OOOOOOOO OO     OO OOOO OOO   OOOOOOO  OOOOOOOO  OO      OOOOOOOO   OOOOOOO  OOOOOO
+//  OO   OO OO     OO OO     OO OO OOO OO OO     OO OO     OO  OOOOO  OO     OO OO     OO   OO
+//  OOOOO   OO     OO OO     OO OO  O  OO OOOOOOOOO OO             OO OO     OO OO     OO   OO
+//  OO  OO  OO     OO OO     OO OO  O  OO OO        OO             OO OO     OO OO     OO   OO
+//  OO   OO  OOOOOOOO  OOOOOOOO OO  O  OO  OOOOOOO  OO         OOOOO  OO     OO  OOOOOOO     OOO
+
+byte isRaumerShot // =0 kein Schuss im Gang (Schussbereit)
+byte raumerShot_x
+byte array raumerShot_y[3]
+byte raumerShot_step
+byte raumerShot_animation
+byte raumerShot_animation_wait
+byte raumerShotCount
+byte raumerShot_animationOffset
+
+procedure initRaumerShot()
+begin
+//  @printf('initRaumerShot()\n')
+  if raumerIsInExplosion == 1 then
+    return 0
+
+  isRaumerShot := 1
+
+  // wir können nur im Flug schießen!
+
+  if raumerHeight > 1 then
+  begin
+    raumerShotCount := 2
+
+    if raumerXDirection == 255 then // -1
+    begin
+      // shot to left
+      raumerShot_x := raumerX - 6
+      raumerShot_y[0] := raumerY + 2
+      raumerShot_y[1] := raumerY + 17
+      // raumerShot_y[2] := raumerY + 6
+      raumerShot_step := 0 - options[13] // Geschwindigkeit Schuss @OPTION_RAUMER_SHOT_SPEED
+      raumerShot_animationOffset := 8
+    end
+
+    if raumerXDirection == 1 then
+    begin
+      // shot to right
+      raumerShot_x := raumerX + 8
+      raumerShot_y[0] := raumerY + 3
+      raumerShot_y[1] := raumerY + 16
+      // raumerShot_y[2] := raumerY + 6
+      raumerShot_step := options[13] // @OPTION_RAUMER_SHOT_SPEED
+      raumerShot_animationOffset := 0
+    end
+
+    // wir stehen quer
+    if raumerLastAnimation==2 or raumerLastAnimation==6 or raumerLastAnimation==13 or raumerLastAnimation==17 then
+    begin
+      raumerShotCount := 1
+      raumerShot_y[0] := raumerY + 8 +raumerYAdd
+    end
+
+    @initCursorBeforeRaumerShot(raumerXPosition, raumerShot_x, raumerY, raumerShotCount, raumerYDirection)
+
+    raumerShot_animation := 7
+    raumerShot_animation_wait := 1
+//    @audio_start_play(adr:raumershot_audio)
+    @asp_raumershot()
+    @incrementRaumerShoots()
+    @addHatefactor(raumershot_hf_add) // TODO shot factor
+  end
+end
+
+
+
+procedure animationRaumerShot()
+begin
+  raumerShot_animation_wait := raumerShot_animation_wait - 1
+  if raumerShot_animation_wait == 0 then
+  begin
+    raumerShot_animation := raumerShot_animation + 1
+    if raumerShot_animation > 7 then
+    begin
+      raumerShot_animation := 0
+    end
+    @setRaumerShotNumber(raumerShot_animation + raumerShot_animationOffset)
+    raumerShot_animation_wait := 2   // Geschwindigkeit der RaumerShotAnimation
+  end
+end
+
+
+
+// TODO: ersetzen durch etwas effizienteres!
+procedure clearRaumerShot()
+begin
+  // clear old shots
+  @setRaumerShotNumber(16)  // leeres Bild
+
+  @copyRaumerShot(pmm, raumerShot_x, raumerShot_y[0])
+  if raumerShotCount == 2 then
+  begin
+    @copyRaumerShot(pmm, raumerShot_x, raumerShot_y[1])
+  end
+
+  isRaumerShot := 0
+end
+
+byte value
+
+procedure raumerShot()
+begin
+//  @printf('raumerShot()\n')
+
+  if isRaumerShot == 1 then
+  begin
+    raumerShot_x := raumerShot_x + raumerShot_step
+
+    animationRaumerShot()
+
+    @copyRaumerShot(pmm, raumerShot_x, raumerShot_y[0])
+    if raumerShotCount == 2 then
+      @copyRaumerShot(pmm, raumerShot_x, raumerShot_y[1])
+
+
+    @restoreCursorUnderRaumerShot()
+    value := @cursorBeforeRaumerShot(raumerXPosition, raumerShot_x)
+    if value != 0 then
+    begin
+      if value == 1 then // =1 jet, =2 house
+      begin
+        // @audio_start_play(adr:jetExplosion_audio)
+        @asp_jetExplosion()
+        @incrementJetsDESTROYED()
+        @addHatefactor(jet_destroy_hf_add) // TODO jet explosion
+        @add_score_jetEncountered()
+      end
+
+      clearRaumerShot()
+      @restoreCursorUnderRaumerShot()
+    end
+    else
+    // Kontrolle der Schussposition
+
+    if @sgn(@toWord(raumerShot_step)) == 1 then
+    begin
+      if raumerShot_x > 152 then    // shot to the right
+      begin
+        clearRaumerShot()
+        @restoreCursorUnderRaumerShot()
+      end
+    end
+    else
+      // da wir bis zu 4 runterzaehlen, aber < 2 pruefen wollen ein trick!
+      if raumerShot_x + 4 < 6 then      // shot to the left
+      begin
+        clearRaumerShot()
+        @restoreCursorUnderRaumerShot()
+      end
+  end
+end
+
+// Der Raumer wurde getroffen
+// Shield runterzaehlen
+// Shield == 0, Raumer abstuerzen und explodieren lassen
+// Raumer wackeln
+procedure raumerEncountered()
+begin
+//  @printf('raumerEncountered()\n')
+
+  if enemyShot_type < 4 then   // Der Killerschuss ist nicht aufzuhalten
+  begin
+    @clearEnemyShot(pmm)
+    isEnemyShot := 0
+    @subFromShield(options[3]) // @OPTION_ENEMY_SHOT_STRENGTH
+
+    // Treffer mit Killer zaehlt doppelt
+    if  enemyShot_type == 3 then
+      @subFromShield(options[3]) // @OPTION_ENEMY_SHOT_STRENGTH
+  end
+//  else if enemyShot_type == 3 then
+//  begin
+//    @subFromShield(options[3]) // @OPTION_ENEMY_SHOT_STRENGTH
+//  end
+
+  initRaumerShaker(adr:raumerXYShake)
+
+  @incrementRaumerHits()
+
+  @addHatefactor(0 - raumerhit_hf_sub) // TODO raumer hit
+
+  HITCLR:=1
+end
+
+
+
+byte rsy
+byte enemy
+
+// Der Enemy wurde getroffen
+procedure enemyEncountered()
+begin
+//  @printf('enemyEncountered()\n')
+
+  clearRaumerShot()
+
+  // Erkennen, welcher Enemy getroffen wurde
+
+  // TODO: hier nochmal die Zahlen exact kontrollieren
+  for i:=0 to raumerShotCount - 1 do
+  begin
+    rsy := raumerShot_y[i]
+    if rsy >= yr[0] and rsy < yr[0]+22 then enemy := 0
+    if rsy >= yr[1] and rsy < yr[1]+22 then enemy := 1
+    if rsy >= yr[2] and rsy < yr[2]+22 then enemy := 2
+    if rsy >= yr[3] and rsy < yr[3]+22 then enemy := 3
+  end
+
+  currentEnemyAnimation[enemy] := adr:enemyExplosion
+  enemyAnimationIndex[enemy] := 0
+
+  // @audio_start_play(adr:enemyExplosion_audio)
+  @asp_enemyExplosion()
+  @add_score_enemyEncountered()
+
+  @addHatefactor(enemy_destroy_hf_add)
+
+  @incrementEnemiesDESTROYED()
+
+  HITCLR:=1
+end
+
+
+
+// OOOOOOO                                                            OO     OO                                                             OO
+// OO    OO                                                           OOO   OOO                                                             OO
+// OO    OO  OOOOOOOO OO     OO OOOO OOO   OOOOOOO  OOOOOOOO          OOOO OOOO  OOOOOOO  OO   OO  OOOOOOO  OOOO OOO   OOOOOOO  OOOOOOOO  OOOOOO
+// OO    OO OO     OO OO     OO OO OOO OO OO     OO OO     OO         OO OOO OO OO     OO OO   OO OO     OO OO OOO OO OO     OO OO     OO   OO
+// OOOOOO   OO     OO OO     OO OO  O  OO OOOOOOOOO OO                OO  O  OO OO     OO OO   OO OOOOOOOOO OO  O  OO OOOOOOOOO OO     OO   OO
+// OO   OO  OO     OO OO     OO OO  O  OO OO        OO                OO     OO OO     OO  OO OO  OO        OO  O  OO OO        OO     OO   OO
+// OO    OO  OOOOOOOO  OOOOOOOO OO  O  OO  OOOOOOO  OO                OO     OO  OOOOOOO    OOO    OOOOOOO  OO  O  OO  OOOOOOO  OO     OO    OOO
+//
+
+byte direction
+
+procedure setNewRaumerYAnimation(direction, address)
+begin
+  raumerYDirection := direction  // -1 hoch, 1 runter, 0 keine Bewegung
+  raumerCurrentAnimation := address
+  raumerAnimationIndex := 0
+  raumerIsInAnimation := 1  // bit 0 und 1 reserviert fuer Raumer Y Animation
+  if direction == 255 then
+    raumerIsInAnimation := 2 // animation switch up
+end
+
+procedure setNewRaumerXAnimation(direction, address)
+begin
+  raumerXDirection := direction
+  raumerCurrentAnimation := address
+  raumerAnimationIndex := 0
+  raumerIsInAnimation := 4 // bit 2 und 3 reserviert fuer Raumer X Animation (4 & 8)
+                           // animation switch to right
+  if direction == 255 then
+    raumerIsInAnimation := 8 // animation switch to left
+end
+
+
+// Diese Funktion nur rufen, wenn raumerIsInAnimation==0
+// Joystick nach oben bewegt
+procedure raumerMoveUp()
+begin
+  if raumerXDirection == 255 then // -1 blick nach links
+  begin
+    if raumerYDirection == 0 then // keine Bewegung
+    begin
+      setNewRaumerYAnimation(-1, adr:leftKippUp)
+    end
+
+    else if raumerYDirection == 1 then // aktuell geht es runter
+    begin
+      setNewRaumerYAnimation(0, adr:leftKippDownBack)
+    end
+
+    else // if raumerYDirection == 255 then // aktuell geht es hoch
+    begin
+      if raumerOverhead == 1 then
+      begin
+        raumerOverhead := 0
+      end
+      raumerY := raumerY - 1
+    end
+
+  end
+  else                           // blick nach rechts
+  begin
+    if raumerYDirection == 0 then // keine Bewegung
+    begin
+      setNewRaumerYAnimation(-1, adr:rightKippUp)
+    end
+
+    else if raumerYDirection == 1 then // aktuell geht es runter
+    begin
+      setNewRaumerYAnimation(0, adr:rightKippDownBack)
+    end
+
+    else // if raumerYDirection == 255 then // aktuell geht es hoch
+    begin
+      if raumerOverhead == 1 then
+      begin
+        setNewRaumerYAnimation(0, adr:rightKippUpFromOverhead)
+        raumerOverhead := 0
+      end
+      raumerY := raumerY - 1
+    end
+
+  end
+end
+
+// Diese Funktion nur rufen, wenn raumerIsInAnimation==0
+// Joystick wurde nach unten bewegt
+procedure raumerMoveDown()
+begin
+  if raumerXDirection == 255 then   // raumer nach links ausgerichtet
+  begin
+    if raumerYDirection == 0 then // no movement
+    begin
+      setNewRaumerYAnimation(1, adr:leftKippDown)
+    end
+
+    else if raumerYDirection == 255 then // fly up
+    begin
+      setNewRaumerYAnimation(0, adr:leftKippUpBack)
+    end
+
+    else // if raumerYDirection == 1 then // fly down
+    begin
+      if raumerOverhead == 1 then
+      begin
+        setNewRaumerYAnimation(0, adr:leftKippUpFromOverhead)
+        raumerOverhead := 0
+      end
+      raumerY := raumerY + 1
+    end
+  end
+  else
+  begin                           // raumer nach rechts ausgerichtet
+    if raumerYDirection == 0 then // no movement
+    begin
+      setNewRaumerYAnimation(1, adr:rightKippDown)
+    end
+
+    else if raumerYDirection == 255 then // fly up
+    begin
+      setNewRaumerYAnimation(0, adr:rightKippUpBack)
+    end
+
+    else // if raumerYDirection == 1 then // fly down
+    begin
+      if raumerOverhead == 1 then
+      begin
+        setNewRaumerYAnimation(0, adr:rightKippUpFromOverhead)
+        raumerOverhead := 0
+      end
+      raumerY := raumerY + 1
+    end
+  end
+end
+
+
+procedure raumerYBackSwap()
+begin
+  if raumerXDirection == 255 then   // raumer blick links
+  begin
+    if raumerOverhead == 1 then
+    begin
+      setNewRaumerYAnimation(0, adr:leftKippUpFromOverhead)
+      raumerOverhead := 0
+    end
+
+    else if raumerYDirection == 255 then
+      setNewRaumerYAnimation(0, adr:leftKippUpBack)
+
+    else if raumerYDirection == 1 then
+      setNewRaumerYAnimation(0, adr:leftKippDownBack)
+  end
+
+  else
+  begin                             // raumer blick rechts
+    if raumerOverhead == 1 then
+    begin
+      setNewRaumerYAnimation(0, adr:rightKippUpFromOverhead)
+      raumerOverhead := 0
+    end
+
+    else if raumerYDirection == 255 then
+      setNewRaumerYAnimation(0, adr:rightKippUpBack)
+
+    else if raumerYDirection == 1 then
+      setNewRaumerYAnimation(0, adr:rightKippDownBack)
+  end
+end
+
+procedure raumerSwitchToLookLeft(address)
+begin
+  setNewRaumerXAnimation(-1, address)
+  initEnemyXAnimation(adr:enemyXAni16Add, xr)
+  enemyGoAway := 1
+end
+
+procedure raumerMoveLeft()
+begin
+
+  if raumerYDirection != 0 then  // hoch oder runter
+  begin
+    if raumerXDirection == 1 and raumerSpeedX < 0 then // blick rechts, speed < 0
+    begin
+      if raumerYDirection == 1 then
+       begin
+        // Um ein paar Bytes zu sparen(!) wird hier knallhart die Animationsnummer des Raumers einfach eingetragen
+        // Die Animation sideSwitchToLook...FromUp hat keine Endekennung und läuft einfach weiter.
+        sideSwitchToLookLeftFromUp[0] := 12
+        raumerSwitchToLookLeft(adr:sideSwitchToLookLeftFromUp)
+       end
+      else
+       begin
+        sideSwitchToLookLeftFromUp[0] := 18
+        raumerSwitchToLookLeft(adr:sideSwitchToLookLeftFromUp)
+       end
+      // raumerSpeedX := 0
+    end
+  end
+
+  if raumerYDirection==0 and raumerOverhead == 0 then
+  begin
+    // if @sgn(raumerSpeedX) == -1 and @toWord(raumerXDirection) != @sgn(raumerSpeedX) then
+    if @sgn(raumerSpeedX) == -1 and raumerXDirection == 1 then
+    begin
+      raumerSwitchToLookLeft(adr:sideSwitchToLookLeft)
+    end
+  end
+end
+
+procedure raumerSwitchToLookRight(address)
+begin
+  setNewRaumerXAnimation(1, address)
+  initEnemyXAnimation(adr:enemyXAni16Sub, xr)
+  enemyGoAway := 1
+end
+
+procedure raumerMoveRight()
+begin
+
+  if raumerYDirection != 0 then // hoch oder runter
+  begin
+    if raumerXDirection == 255 and raumerSpeedX > 0 then // blick nach rechts, speed > 0
+    begin
+      if raumerYDirection == 1 then
+      begin
+        sideSwitchToLookRightFromUp[0] := 1
+        raumerSwitchToLookRight(adr:sideSwitchToLookRightFromUp)
+      end
+      else
+      begin
+        sideSwitchToLookRightFromUp[0] := 7
+        raumerSwitchToLookRight(adr:sideSwitchToLookRightFromUp)
+      end
+    end
+  end
+
+  if raumerYDirection==0 and raumerOverhead == 0 then
+  begin
+    // if @sgn(raumerSpeedX) == 1 and @toWord(raumerXDirection) != @sgn(raumerSpeedX) then
+    if @sgn(raumerSpeedX) == 1 and raumerXDirection == 255 then
+    begin
+      raumerSwitchToLookRight(adr:sideSwitchToLookRight)
+    end
+  end
+end
+
+
+
+word raumerLastXPosition
+
+byte endlessShip = @RS_MISSION_ENDLESS_SHIP
+
+byte gameexit
+byte raumerMove
+byte raumerMoveNeedEnergy
+byte raumerMoveSlowdown = @OPTION_RAUMERMOVE_SLOWDOWN
+// Fälle
+// -----
+// keine Animation
+// up
+// down
+// left switch
+// right switch
+
+procedure raumerMovement(key)
+begin
+//  @printf('raumerMovement()\n')
+  if raumerIsInExplosion == 0 then
+  begin
+    if landing == 0 then
+    begin
+      // kein landing mode
+      // erstmal den Raumer bewegen
+
+      if key == 28 or @stickUp(0) == 1 then
+      begin
+        raumerY := raumerY - 1
+        raumerMove := 1
+      end
+
+      if key == 29 or @stickDown(0) == 1 then
+      begin
+        raumerY := raumerY + 1
+        raumerMove := 1
+      end
+
+      if key == 30 or @stickLeft(0) == 1 then
+      begin
+        raumerSpeedX := raumerSpeedX - 1
+        raumerMove := 1
+        if raumerSpeedX < -24 then
+          raumerSpeedX := -24
+      end
+
+      if key == 31 or @stickRight(0) == 1 then
+      begin
+        raumerSpeedX := raumerSpeedX + 1
+        raumerMove := 1
+        if raumerSpeedX > 24 then
+          raumerSpeedX := 24
+      end
+
+      // keine Animation, dann checken wir mal ob wir eine starten sollten
+
+      if raumerIsInAnimation == 0 then
+      begin
+        if key == 30 or @stickLeft(0) == 1 then
+         begin
+           raumerMoveLeft()
+           raumerMove := 1
+         end
+
+        if key == 31 or @stickRight(0) == 1 then
+         begin
+           raumerMoveRight()
+           raumerMove := 1
+         end
+
+        if raumerIsInAnimation == 0 then
+        begin
+          if key == 28 or @stickUp(0) == 1 then
+           begin
+             raumerMoveUp()
+             raumerMove := 1
+           end
+
+          else if key == 29 or @stickDown(0) == 1 then
+           begin
+             raumerMoveDown()
+             raumerMove := 1
+           end
+
+          else
+           begin
+             raumerYBackSwap()
+           end
+        end
+      end
+
+      if key == 30 or @stickLeft(0) == 1 then
+      begin
+        raumerMove := 1
+        if raumerXDirection == 1 and raumerSpeedX < 0 then
+          raumerSpeedX := 0
+      end
+
+      if key == 31 or @stickRight(0) == 1 then
+      begin
+        raumerMove := 1
+        if raumerXDirection == 255 and raumerSpeedX > 0 then
+          raumerSpeedX := 0
+      end
+    end
+    else
+    begin
+      // mode landing
+      raumerSpeedX := raumerSpeedX - 1
+      if raumerSpeedX < 0 then
+        raumerSpeedX := 0
+    end
+  end
+  else
+  begin
+    if raumerIsInAnimation == 0 then
+    begin
+      gameexit := 70
+
+      // @audio_start_play(adr:raumerExplosion_audio)
+      @asp_raumerExplosion()
+
+      if raumerXDirection == 1 then
+        setNewRaumerXAnimation(raumerXDirection, adr:rightabsturz)
+      else
+        setNewRaumerXAnimation(raumerXDirection, adr:leftabsturz)
+    end
+  end
+  // Raumer Kanten zum Ship
+
+  if raumerY < 43 then  // TODO: obere Kante fuer Raumer
+    raumerY := 43
+
+  if raumerY > 152 then // TODO: untere Kante fuer Raumer
+    raumerY := 152
+
+
+  // Raumer position relativ zum Ship
+  raumerLastXPosition := raumerXPosition
+
+  raumerXPosition := raumerXPosition + raumerSpeedX
+
+  if raumerXPosition < 0 then
+  begin
+    if endlessShip == 0 then
+      raumerXPosition := 0
+    else
+      raumerXPosition := raumerXPosition + 14848
+  end
+
+  // if raumerXPosition > 29696 then // das 16-Fache von 1856
+  //   raumerXPosition := 29696
+
+  if raumerXPosition > 14848 then // das 8-Fache von 1856
+  begin
+    if endlessShip == 0 then
+      raumerXPosition := 14848
+    else
+      raumerXPosition := raumerXPosition - 14848
+  end
+
+  // if raumerXPosition > 7424 then // das 4-Fache von 1856
+  //  raumerXPosition := 7424
+
+  @restoreCursor()
+  value := @cursorBeforeRaumer(raumerXPosition, raumerY) // raumerXDirection, raumerLastAnimation
+  if value == 121 then // Landing
+  begin
+    if landing == 0 then
+    begin
+      if raumerIsInAnimation == 0 and raumerLastAnimation == 11 then // landing nur wenn sauber gerade
+      begin
+        landing := 1
+        gameexit := 70
+        setNewRaumerXAnimation(raumerXDirection, adr:rightlanding)
+      end
+    end
+
+    value := 0
+  end
+
+  if options[9] != 0 and value != 0 then // @OPTION_SHIP_COLLISION
+  begin
+    if @abs(raumerSpeedX) > 10 then
+    begin
+      // House oder Mast gerammt
+      // raumerXPosition := raumerLastXPosition
+      if raumerSpeedX < 0 then
+      begin
+        raumerSpeedX := @neg(raumerSpeedX)
+        raumerSpeedX := raumerSpeedX / 2
+        raumerSpeedX := @neg(raumerSpeedX)
+      end
+      else
+        raumerSpeedX := raumerSpeedX / 2
+
+      @subFromShield(10) // raumerSpeedX / 2
+      initRaumerShaker(adr:raumerXYShake)
+    end
+    else if @abs(raumerSpeedX) > 5 then
+    begin
+      @subFromShield(5) // raumerSpeedX / 2
+      initRaumerShaker(adr:raumerXYShake)
+    end
+    else
+    begin
+      raumerXPosition := raumerLastXPosition
+      raumerSpeedX := 0
+      @subFromShield(1) // raumerSpeedX / 2
+      initRaumerShaker(adr:raumerXYShake)
+    end
+    @incrementBuildingCollisions()
+  end
+
+  @setRaumerXPosition(raumerXPosition)
+
+  if raumerMove != 0 then
+  begin
+    @asp_raumerMove()
+    raumerMove := 0
+    raumerMoveNeedEnergy := raumerMoveNeedEnergy + 1
+    if raumerMoveNeedEnergy >= raumerMoveSlowdown then
+    begin
+      raumerMoveNeedEnergy := 0
+      @subFromShield(1)
+    end
+  end
+end
+
+byte showDisplayList = @RS_SHOW_DISPLAY_LIST
+byte needInitEnemy = @RS_NEED_INIT_ENEMY
+byte menuexit
+
+byte status = @loadShipStatus
+
+//byte array allColor[27] = @RS_ALL_COLOR
+
+//procedure cutdownColor()
+//begin
+//  for j:=15 downto 0 do
+//  begin
+//    for i:=0 to 27 do
+//    begin
+//      orcolor := allColor[i]
+//      allColor[i] := orcolor & ($f0 + j)
+//    end
+//    @sleep(1)
+//  end
+//end
+
+procedure checkKey()
+begin
+  keycode := CH
+  if keycode != $ff then
+    CH := 255              // wenn key != 255 CH auf 255 setzen (empfohlen)
+  // key := translateKeyCode[keycode]
+  key := @getKeyFromKeyCode(keycode)
+end
+
+//  OO   OO
+//  OOO OOO
+//  OOOOOOO  OOOOOOO  OOOOOOOO  OO     OO
+//  OO O OO OO     OO OO     OO OO     OO
+//  OO   OO OOOOOOOOO OO     OO OO     OO
+//  OO   OO OO        OO     OO OO     OO
+//  OO   OO  OOOOOOO  OO     OO  OOOOOOOO
+
+procedure inMenuCheckKey()
+begin
+    @waitline(100)
+    @waitline(99)
+
+    upDownMovementGegner()
+
+    checkKey()
+
+    if key == 27 or key == 32 then menuexit := 1
+    if @Strig(0) == 0 then menuexit := 1
+end
+
+procedure menu()
+begin
+  initRaumer(0, 99, 0)
+  @initRaumerShield(0)
+
+  // muss hinter init Raumer stehen, weil der die Sterne auch setzt.
+  @initMenu()
+  menuexit := 0
+
+  key := 0
+  CH:=255
+  krpdel:=25
+  keyrep:=3
+
+  @sleep5()
+
+  raumerIsInAnimation := 1
+  raumerCurrentAnimation := adr:rightrotateup
+  raumerAnimationIndex := 0
+
+  initEnemy()
+
+  isEnemyShot := 0
+  enemyShot_type := 1 //  0- ,1 - ,2 <, 3 |
+//  enemyShot_speed := 1 // must be greater 0
+  enemyShot_possible := 1
+
+  mycritic := 0
+  initDone := 1
+
+  repeat
+    inMenuCheckKey()
+
+    animationRaumer()
+
+    enemyShot()
+    if isEnemyShot == 0 then
+    begin
+      initEnemyShot()
+    end
+
+    if enemyCount == 0 or needInitEnemy == 1 then
+    begin
+      @clearEnemy(pm0)
+      initEnemy()
+      needInitEnemy := 0
+    end
+
+    if raumerIsInAnimation == 0 then
+    begin
+      raumerIsInAnimation := 1
+      raumerCurrentAnimation := adr:rightrotateup
+      raumerAnimationIndex := 0
+    end
+
+    if showDisplayList == 1 then
+    begin
+      @inMenu(key)
+    end
+
+  until menuexit != 0 // escape
+
+  // Next is show Mission!
+  showDisplayList := 2
+
+  initEnemyXAnimation(adr:enemyXAni16Add, xr)
+  enemyGoAway := 1
+
+end
+
+
+//      OO               OO     OO
+//                              OO
+//     OOO   OOOOOOOO   OOO   OOOOOO
+//      OO   OO     OO   OO     OO
+//      OO   OO     OO   OO     OO
+//      OO   OO     OO   OO     OO
+//    OOOOOO OO     OO OOOOOO    OOO
+
+
+byte tat_inner_color = @RS_TAT_COLOR1
+
+byte ship_background = @RS_SHIP_COLBK
+byte shadow = @RS_SHIP_COLOR0
+byte light = @RS_SHIP_COLOR1
+byte normal = @RS_SHIP_COLOR2
+
+byte starboard = @RS_SHIP_COLOR3STAR
+byte midship = @RS_SHIP_COLOR3MID
+byte portship = @RS_SHIP_COLOR3PORT
+
+byte logoTextColor = @RS_OXYGENE_LOGO_TEXT_COLOR
+byte array logoColor[14] = @RS_OXYGENE_LOGO_COLOR
+byte array normalLogoColor[15] = [2,2,4,6,8,10,12,14,12,10,8,6,4,2,2]
+
+// moegliche Ship Farben, alles andere sieht nicht so schoen aus
+byte array shipColors[1] = [
+$06, // [0] lighter good versions
+$16,
+$26,
+$86,
+$96,
+$e6, // [5]
+
+$04, // [6] darker good versions
+$14,
+$34,
+$44,
+$74,
+$84,
+$94,
+$a4,
+$d4,
+$e4  // [15]
+]
+
+byte shipColor
+
+
+procedure initGame()
+begin
+
+  landing := 0
+
+  initRaumer(75, 96, 8) // x,y,height
+
+  raumerIsInAnimation := 0
+  raumerAnimationWait := 1
+  raumerShot_possible := 0
+  raumerIsInExplosion := 0
+
+  initEnergyDecreaser()
+  initRaumerShotDecreaser()
+
+  currentEnemyIndex:=0
+  initEnemy() // muss nach initRaumer stehen, wegen position!
+
+  // Ship Color
+  shipColor := shipColors[options[10]]
+  orColor := shipColor & $f0 // @OPTION_SHIP_COLOR
+  begin
+    light := $0c // ! orColor // so bleiben die Sterne weiss
+    normal := shipColor
+    shadow := 2 ! orColor
+
+    starboard := $C8 // gruen 4th color (+128 is set)
+    midship := $18   // gelb  4th color (+128 is set)
+    portship := $36  // rot   4th color (+128 is set)
+
+    tat_inner_color := $34
+  end
+
+  // Logo Color
+  logoTextColor := $34
+
+  for i:=0 to 14 do
+  begin
+    logoColor[i] := normalLogoColor[i]
+  end
+
+end
+
+//     OOOOO
+//    OO   OO
+//    OO       OOOOOOOO OOOO OOO   OOOOOOO
+//    OO      OO     OO OO OOO OO OO     OO
+//    OO OOOO OO     OO OO  O  OO OOOOOOOOO
+//    OO   OO OO     OO OO  O  OO OO
+//     OOOOO   OOOOOOOO OO  O  OO  OOOOOOO
+
+procedure game()
+begin
+  gameexit := 0
+  key := 0
+  krpdel:=1
+  keyrep:=1
+
+// TODO: Herausfinden, was hier falsch laeuft!!!
+//  @initHatefactor(starterHateFactor)
+  @initHatefactor()
+
+  initGame()
+  @initGameStatistics()
+
+  raumerShot_possible := 1
+
+  enemyShot_possible := 1
+  isEnemyShot := 0
+  initEnemyShot()
+  isRaumerShot := 0
+
+  @initRaumerShield(options[6]) // @OPTION_RAUMER_SHIELD_STRENGTH
+  mycritic := 0
+
+//  @starttime()
+  @reset_min_sec_timer()
+  HITCLR:=1
+
+// ------------------------------------------------------------------
+//
+//
+// GAME LOOP
+//
+//
+// ------------------------------------------------------------------
+
+  repeat
+//    colbk := $02
+    animationRaumer()
+
+// Weissen Strich ziehen, bis wo Bewegungen Zeit kosten
+//    COLBK:=$04 // @backcolorline($0f)
+//    colbk := $24
+    upDownMovementGegner()
+
+//    colbk := $44
+    enemyShot()
+
+//    colbk := $64
+    raumerShot()
+
+//    colbk := $84
+
+    if raumerShot_possible == 1 and isRaumerShot == 0 and @Strig(0) == 0 then
+    begin
+      initRaumerShot()
+      if options[8] != 0 then // @OPTION_FIRE_SLOWDOWN
+      begin
+        raumerShotDecreaseWait := raumerShotDecreaseWait - 1
+        if raumerShotDecreaseWait == 0 then
+        begin
+          initRaumerShotDecreaser()
+          @subFromShield(1)
+        end
+      end
+    end
+
+    if isEnemyShot == 0 then
+    begin
+      // TODO: timer einbinden, der runterzählt, damit Enemy nicht sofort wieder losballert
+      initEnemyShot()
+    end
+
+    colorswitch := 0
+
+// ACHTUNG: wir warten immer auf Tastendruecke fuer genauere Einstellungen
+    checkKey()
+
+//    colbk := $a4
+
+    if SIZEP[0] & $06 != 0 then
+    begin
+      // @printf('Raumer wurde getroffen\n')
+      raumerEncountered()
+    end
+
+    if SIZEP[2] & $01 != 0 then
+    begin
+      // @printf('Enemy wurde getroffen\n')
+      enemyEncountered()
+    end
+
+    if enemyCount == 0 then
+    begin
+//      colbk:=$34
+      initEnemy()
+    end
+
+//    colbk := $24
+
+    raumerMovement(key)
+
+//    colbk := $44
+
+    @raumerShieldDecrease() // vermindert den aktuellen Shield, wenn shieldDecreaser != 0
+
+//    colbk := $64
+
+    if options[7] != 0 then // @OPTION_IS_ENERGY_SLOWDOWN
+    begin
+      energyDecreaseWait := energyDecreaseWait - 1
+      if energyDecreaseWait == 0 then
+      begin
+        initEnergyDecreaser()
+        @subFromShield(1)
+      end
+    end
+
+//    colbk := $84
+
+    @hatefactordecrease()
+
+//    colbk := $a4
+
+    @increment_min_sec_Timer()
+
+// TODO TEST ONLY --------------------------
+//    @waitline(50)
+//   colbk := $84
+//    @clearEnemyShot()
+//    colbk := 0
+// -----------------------------------------
+    // TODO: ist nur zum testen hier!
+    // @backcolorline($84)
+
+    @waitline(100)
+
+    if key == 27 then gameexit := 1 // wir koennen mit Escape den Loop verlassen
+
+    if gameexit > 1 then            // Game exit abklingen lassen
+      gameexit := gameexit - 1
+
+  until gameexit == 1 // escape
+
+//  @stopTime()
+
+  // TODO: pruefen, was eigentlich sache ist
+  // landing==1 Raumer ist gelandet!
+  // showDisplayList := 2
+  // Mission complete! zeigen
+
+  // raumerIsInExplosion == 1
+  // Game Over! zeigen
+
+  // Next is result of Mission!
+  showDisplayList := 3
+end
+
+
+
+procedure showMission()
+begin
+
+  initRaumer(0, 45, 0)
+
+  @showMission(0)
+  menuexit := 0
+  key := 0
+  CH:=255
+
+  @sleep5()
+
+  repeat
+    inMenuCheckKey()
+
+  until menuexit != 0 // escape
+
+  // Next is GAME!
+  showDisplayList := 0
+end
+
+
+
+byte mission_failed = @RS_MISSION_FAILED
+
+procedure showResultMission()
+begin
+  initRaumer(0, 65, 0)
+
+  @showResultMission()
+  menuexit := 0
+  key := 0
+  CH:=255
+
+  @sleep5()
+
+  // Next is Menu!
+  showDisplayList := 1
+
+  repeat
+    inMenuCheckKey()
+
+    if @stickUp(0) == 1 or @strig(0) == 0 or key == 28 then
+    begin
+      if mission_failed == 0 then
+        @nextMission()
+
+      showDisplayList := 2
+      menuexit := 1
+    end
+
+  until menuexit != 0 // escape
+
+  if mission_failed != 0 then
+    @CLEAR_CURRENT_SCORE()
+
+end
+
+byte tat_xpos = @RS_TAT_XPOS
+byte array statline_color[4] = @RS_TEXT_COLOR
+
+byte array mostColors[18] = @RS_ENEMY_COLOR
+byte newColor
+
+// Alle Farben auf 0
+procedure blackAllColor()
+begin
+  for i:=0 to 18 do
+  begin
+    mostColors[i] := 0
+  end
+  tat_xpos := 0
+  statline_color[0] := 0
+end
+
+
+// OO     OO            OO
+// OOO   OOO
+// OOOO OOOO  OOOOOOOO OOO  OOOOOOOO
+// OO OOO OO OO     OO  OO  OO     OO
+// OO  O  OO OO     OO  OO  OO     OO
+// OO     OO OO     OO  OO  OO     OO
+// OO     OO  OOOOOOOO OOOO OO     OO
+
+// ----<<<< Hauptprogramm >>>>----
+
+byte dma=@RS_DMA
+
+begin
+  @INIT_SIMPLE_64K()
+
+  initPlayerMissile()
+  showDisplayList := 1 // Menu
+  @sleep5()
+  @init_audio_hardware()
+  @init_audio_player()
+
+  initDone := 0
+
+  initGame()
+
+  repeat
+    if showDisplayList == 1 then
+    begin
+       @CLEAR_CURRENT_SCORE()
+       menu()
+    end
+
+    if showDisplayList == 2 then
+    begin
+      showMission()
+
+      blackAllColor()
+      dma := 0
+      @sleep(2)
+
+      @loadship()
+
+      statline_color[0] := $08
+
+      @sleep(2)
+      dma := 1
+
+      @init_audio_hardware()
+
+      if status > 127 then
+      begin
+        menuexit := 0
+        showDisplayList := 1 // Back to Menu!
+      end
+    end
+
+    if menuexit == 1 then
+    begin
+      game()
+
+      @check_score()
+      showResultMission()
+    end
+
+  until menuexit == 2
+
+end
+
+include 'MEMORY-MAP.INC'
+include 'SIMPLE-64K.INC'
+include 'FAST_SCREEN_OUTPUT.INC'
+include 'SCREEN_OUTPUT.INC'
+include 'PRINTF.INC'
+include 'MATH_NO_IMULT.INC'
+include 'ARRAY.INC'
+include 'GETCHAR.INC'
+include 'STICK.INC'
+include 'TIME.INC'
+include 'DOS.INC'
+include 'IO.INC'
+include 'BACKCOLORLINE.INC'
+
+include 'RAUMER-STRUCT.INC'
+include 'ENEMY.INC'
+include 'RAUMER.INC'
+include 'COLLISIONS.INC'
+// include 'COLLISIONS_RED.INC'
+include 'KEYCODE.INC'
+include 'OXYGENE-AUDIO-PLAYER.INC'
+include 'GAME-STATISTICS.INC'
+include 'TAT.INC'
+// include 'MISSION.INC'
+include 'OXYGENE.INC'
+include 'HIGHSCORE.INC'
+
+include 'AUDIOLST.INC'
+include 'SHIELD.INC'
+include 'HATEFACT.INC'
+include 'MENU.INC'
+include 'MENU-COLOR.INC'
+include 'BINLOAD.INC'
+include 'COMPARE.INC'
+
+include 'BASIC.INC'
+// RUNTIME.INC wird automatisch angehaengt

@@ -1,0 +1,42 @@
+= Oxygene Be Sources
+
+Here you find the main sources of the Atari 8bit game Oxygene Be.
+
+To simply start the game, take the ATR-file from the release sub-folder.
+
+== Licenses
+Some stuff here is downloaded from AtariWiki and is licensed under
+https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
+
+* Turbo-DOS XE 2.0 (see https://atariwiki.org/wiki/ for more information)
+* Turbo-Basic-XL 2.0 (https://atariwiki.org/wiki/ for more information)
+* LiteDOS-3
+
+The Oxygene Be game sources are also licensed under Creative Common License.
+
+== Preparations to build
+To build the game, you need some more things.
+
+1. A unix based environment like Linux or Windows with mingw.
+2. Bash Shell **/bin/bash**
+3. **make**
+  - To build this source from scratch
+4. the wnf-compiler **wnfc**. Make it available via $PATH variable.
+5. **xldir** disk-utility to handle ATR and LiteDOS 8-bit-Images of the Atari 8bit. Make it available via $PATH variable.
+6. https://atari.miribilist.com/atasm/[**atasm**] the 6502-cross-assembler, to create COM-files out of ASM-files,
+because the wnf-compiler only creates assembler files.
+7. the http://www.emulators.com/freefile/pcxf380.zip[**ATARIXL.ROM**], copy the XL-OS to `../firmware` folder.
+8. https://atari800.github.io/index.html[**atari800**] Emulator is need. Make it available via $PATH variable.
+
+== build
+
+To build the game from source, just type **make**.
+
+Within build, the atari800-Emulator will be started and compress the ships. At 'Ready' you need to leave the emulator
+by press F9 key.
+
+After full build you find a oxygene-game.atr in this folder. To start the game, **make start-game**
+
+== ship editor
+
+See link:[ship-editor.adoc]

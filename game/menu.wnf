@@ -1,0 +1,1198 @@
+// cdw by 'The Atari Team' 2020
+// licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
+
+INCLUDE menu:MENU
+
+// game-mode: god-mode, easy-peasy, simple, easy, practicable, provocative, difficult, complicated, suicide
+
+
+//
+//  OOOOOO              OO    OO
+// OO    OO             OO
+// OO    OO OOOOOOOO  OOOOOO OOO   OOOOOOO  OOOOOOOO   OOOOOOO
+// OO    OO OO     OO   OO    OO  OO     OO OO     OO OO
+// OO    OO OO     OO   OO    OO  OO     OO OO     OO  OOOOOOO
+// OO    OO OOOOOOOO    OO    OO  OO     OO OO     OO        OO
+//  OOOOOO  OO           OOO OOOO  OOOOOOO  OO     OO  OOOOOOO
+//          OO
+
+
+byte optionMaxQuantity = @OPTION_ENEMY_MAX_QUANTITY          // 0
+byte optionEnemyShotAccuracy =@OPTION_ENEMY_SHOT_ACCURACY
+byte optionEnemyShotType =@OPTION_ENEMY_SHOT_TYPE
+byte optionEnemyShotStrength =@OPTION_ENEMY_SHOT_STRENGTH
+byte optionEnemyColorMode =@OPTION_ENEMY_COLOR_MODE
+byte optionEnemyColor =@OPTION_ENEMY_COLOR
+byte optionRaumerShieldStrength =@OPTION_RAUMER_SHIELD_STRENGTH
+byte optionIsEnergySlowdown =@OPTION_IS_ENERGY_SLOWDOWN
+byte optionEnergySlowdown =@OPTION_ENERGY_SLOWDOWN
+byte optionIsFireSlowdown =@OPTION_IS_FIRE_SLOWDOWN
+byte optionFireSlowdown =@OPTION_FIRE_SLOWDOWN
+byte optionShipCollision =@OPTION_SHIP_COLLISION
+byte optionShipColor =@OPTION_SHIP_COLOR
+byte optionShipNumber =@OPTION_SHIP_NUMBER
+byte optionShieldSlowdown = @OPTION_SHIELD_SLOWDOWN
+byte optionRaumerShotSpeed = @OPTION_RAUMER_SHOT_SPEED   // 13
+
+byte optionHateFactorMode = @OPTION_HATEFACTOR_MODE // 14
+byte optionHateFactorWait = @OPTION_HATEFACTOR_WAIT // 15
+byte optionHateFactorEnemyHit = @OPTION_HATEFACTOR_ENEMY_HIT
+byte optionHateFactorRaumerHit = @OPTION_HATEFACTOR_RAUMER_HIT // 17
+byte optionHateFactorRaumerShot = @OPTION_HATEFACTOR_RAUMER_SHOT // 18
+
+word address
+
+//procedure printf_fast(address)
+//begin
+//  @printff(address)
+//end
+
+
+string empty = ['                    ']
+
+//
+// OO     OO
+// OOO   OOO
+// OOOO OOOO  OOOOOOO  OOOOOOOO  OO     OO
+// OO OOO OO OO     OO OO     OO OO     OO
+// OO  O  OO OOOOOOOOO OO     OO OO     OO
+// OO     OO OO        OO     OO OO     OO
+// OO     OO  OOOOOOO  OO     OO  OOOOOOOO
+//
+
+// - ENEMY -
+string o1 =  ['   MAX QUANTITY: %d  ']
+string o2 =  ['  SHOT ACCURACY: %d  ']
+string o3 =  ['      SHOT TYPE: %d  ']
+string o4 =  ['  SHOT STRENGTH: %d  ']
+string o42 = ['     COLOR-MODE: %d  '] // 0 simple Color, 1 add, 2 random color
+string o5 =  ['          COLOR: %d  '] // 0 - 15 green, yellow, blue, red
+// - SPACECRAFT -
+string o6 =  [' SHIELD STRENGH: %d  '] // none(32), poor(16), low(8), medium(4), high(2), full(0)
+string o7 =  ['ENERGY SLOWDOWN: %d  '] // no, yes, baut langsam den Schirm mit ab.
+string o8 =  ['  FIRE SLOWDOWN: %d  '] // no, yes, baut langsam den Schirm mit ab.
+string o9 =  [' SHIP COLLISION: %d  '] // 0-11
+// - SHIP -
+string o10 = ['     SHIP COLOR: %d  '] // Es existiert eine Liste mit netten Farben!
+string o11 = ['SHIP NUM 2 LOAD: %d  '] // Dx:SHIP<number>.DAT, x is dynamisch
+string o12 = ['SHIELD SLOWDOWN: %d  '] // 0-11 how long it takes to decrease the shield
+string o13 = ['     SHOT SPEED: %d  '] // 1-4 how fast can we shot
+string o14 = ['HATEFACTOR MODE: %d  '] // 0-1 1 = yes
+string o15 = ['  HATE SLOWDOWN: %d  '] // 0 - 4 the higher the longer it takes to go down
+string o16 = ['      ENEMY HIT: %d  '] // 0 - 4
+string o17 = [' SPACECRAFT HIT: %d  '] // 0 - 4
+string o18 = ['SPACECRAFT SHOT: %d  '] // 0 - 4
+word array optionsMenu[17] = [
+empty, empty,
+o1,
+o2,
+o3,
+o4,    // optionEenemyShotStrength
+o42,
+o5,
+o6,
+o7,
+o8,
+o9,
+o10,
+o11,
+o12,
+o13,
+o14,
+o15,
+o16,
+o17,
+o18,
+empty, empty
+]
+
+word array option_value[23]
+
+byte array option_value_min[17] = [
+0,0,
+2, // enemy quantity
+0,
+1, // openEnemyShotType
+0, // shot strength
+0,
+0,
+0, // shield strength
+0, // energy slowdown
+0, // fire slowdown
+0, // ship collisions
+0, // ship color
+1, // ship to load min number
+1, // shield slowdown
+1, // shot speed
+0, // HATE FACTOR MODE -------
+0, // hate slowdown
+0, // hate enemy hit
+0, // Hate raumer hit
+0, // raumer shot
+0,0
+]
+
+byte array option_value_max[1] = [
+0,0, // HEADER, MSUT BE EMPTY!
+
+5,  // 0 enemy quantity 2=2 enemies, 4=4 Enemies, 5=random Enemies (2-4)
+2,  // 1 Enemy shot accuracy 0=low, 2=high
+3,  // 2 Enemy Shot Type 1=single-, 2=tripple>, 3=killer]
+3,  // 3 Enemy shot strength
+2,  // 4 random color (0=no change, 1=count, 2=random)
+15, // 5 enemy color
+5,  // 6 shield strength
+1,  // 7 energy slowdown (0=no, 1=yes)
+1,  // 8 fire slowdown (0=no, 1=yes)
+1,  // 9 ship collision (no, yes)
+15, // 10 ship color
+36, // 11 SHIP NUMBER TO LOAD Dx:SHIP<NUM>.DAT 1 - 36 (0-9, A-Z) base36
+11, // 12 shield slowdown (1=fast, 11=slow)
+4,  // 13 shot speed: 1=slow, 2=normal, 3=fast, 4=faster
+8,  // 14 Hate factor mode 0=no, 1=yes, higher => stronger
+4,  // 15 Slowdown    1=fast slowdown, 4=slow slowdown of hatefactor
+4,  // 16 Enemy hit   0=1, 1 more hates, 2 4 8 16
+4,  // 17 Raumer hit  If Enemy hits Spacecraft, down of hates (* 32)
+4,  // 18 Raumer shot 1 2 4 8 16
+
+0,0 // FOOTER, EMPTY
+]
+
+byte n
+
+procedure initMenuOptions()
+begin
+  option_value[2]:= optionMaxQuantity
+  option_value[3]:= optionEnemyShotAccuracy
+  option_value[4]:= optionEnemyShotType
+  option_value[5]:= optionEnemyShotStrength
+  option_value[6]:= optionEnemyColorMode
+  option_value[7]:= optionEnemyColor
+  option_value[8]:= optionRaumerShieldStrength
+  option_value[9]:= optionIsEnergySlowdown
+  option_value[10]:= optionIsFireSlowdown
+  option_value[11]:= optionShipCollision
+  option_value[12]:= optionShipColor
+  option_value[13]:= optionShipNumber
+  option_value[14]:= optionShieldSlowdown
+  option_value[15]:= optionRaumerShotSpeed
+
+  option_value[16]:= optionHateFactorMode
+  option_value[17]:= optionHateFactorWait
+  option_value[18]:= optionHateFactorEnemyHit
+  option_value[19]:= optionHateFactorRaumerHit
+  option_value[20]:= optionHateFactorRaumerShot
+
+end
+
+byte needInitEnemy = @RS_NEED_INIT_ENEMY
+
+procedure setMenuOptions()
+begin
+  optionMaxQuantity := option_value[2]
+  optionEnemyShotAccuracy := option_value[3]
+  optionEnemyShotType := option_value[4]
+  optionEnemyShotStrength := option_value[5]
+  optionEnemyColorMode := option_value[6]
+  optionEnemyColor := option_value[7]
+  optionRaumerShieldStrength := option_value[8]
+  optionIsEnergySlowdown := option_value[9]
+  optionIsFireSlowdown := option_value[10]
+  optionShipCollision := option_value[11]
+  optionShipColor := option_value[12]
+  optionShipNumber := option_value[13]
+  optionShieldSlowdown := option_value[14]
+  optionRaumerShotSpeed := option_value[15]
+
+  optionHateFactorMode := option_value[16]
+  optionHateFactorWait := option_value[17]
+  optionHateFactorEnemyHit := option_value[18]
+  optionHateFactorRaumerHit := option_value[19]
+  optionHateFactorRaumerShot := option_value[20]
+
+end
+
+//
+// OO                                   OOO
+// OO                                    OO
+// OO        OOOOOOO  OO   OO  OOOOOOO   OO
+// OO       OO     OO OO   OO OO     OO  OO
+// OO       OOOOOOOOO OO   OO OOOOOOOOO  OO
+// OO       OO         OO OO  OO         OO
+// OOOOOOOO  OOOOOOO    OOO    OOOOOOO  OOOO
+//
+
+byte CONSOL=53279
+
+
+// - Multiplikator, wie schnell der Enemy boese wird
+//     Die Werte Anzahl, Schussgenauigkeit, Shot Type, Shot Strength werden ueber HateFactor gesetzt
+// - wie schnell er wieder runterkommt
+// - Shield Strength
+// - Anzahl der Sekunden, wie lange das Spiel max läuft
+//     Das regeln wir über den Energieverbrauch
+// - Wieviel Energie frisst ein Schuss
+// - Was kostet ein Zusammenstoss mit hohem Gebaeude
+
+byte array godmode[1] =     [0, 1, 5, 0, 0, 0]
+byte array easy_peasy[1] =  [1, 1, 5, 0, 0, 1]
+byte array simple[1] =      [2, 2, 4, 0, 0, 1]
+byte array easy[1] =        [3, 2, 4, 1, 1, 1]
+byte array practicable[1] = [4, 3, 3, 2, 1, 1]
+byte array provocative[1] = [5, 3, 3, 2, 1, 1]
+byte array difficult[1] =   [6, 4, 2, 3, 1, 1]
+byte array complicated[1] = [7, 4, 2, 3, 2, 1]
+byte array suicide[1] =     [8, 5, 1, 4, 2, 1]
+
+word array startHateFactor[1] = [
+0,
+0,
+64,
+128,
+256,
+386,
+640,
+1024,
+1536
+]
+
+word array levelvalueslist[1] = [
+  godmode,
+  easy_peasy,
+  simple,
+  easy,
+  practicable,
+  provocative,
+  difficult,
+  complicated,
+  suicide
+]
+
+string str_godmode =     ['GOD-MODE   ']
+string str_easypeasy =   ['EASY-PEASY ']
+string str_simple =      ['SIMPLE     ']
+string str_easy =        ['EASY       ']
+string str_practicable = ['PRACTICABLE']
+string str_provocative = ['PROVOCATIVE']
+string str_difficult =   ['DIFFICULT  ']
+string str_complicated = ['COMPLICATED']
+string str_suicide =     ['SUICIDE    ']
+string str_freestyle =   ['FREE-STYLE '] // sonderfall, use_level==0
+
+word array levelnamelist[1] = [
+  str_godmode,
+  str_easypeasy,
+  str_simple,
+  str_easy,
+  str_practicable,
+  str_provocative,
+  str_difficult,
+  str_complicated,
+  str_suicide
+]
+
+byte use_level = @USE_LEVEL // 1 level will used for check, else options will used for check
+word level_name
+byte mission_level = @RS_CURRENT_MISSION
+
+procedure showLevelName(level_name)
+begin
+  @fast_gotoxy(0,4)
+  @printff('SELECT: %s\n', level_name)
+  @printff('OPTION: MISSION +_%d ', mission_level)
+end
+
+word levelvalues
+
+// TODO: diese Werte in Raumer-Struct setzen?
+byte hatemultiply
+
+byte hf_getdown = @OPTION_HF_GETDOWN
+
+byte level = @CURRENT_LEVEL
+byte oldlevel
+
+byte raumershot_hf_add = @OPTION_RAUMERSHOT_HF_ADD
+byte raumerhit_hf_sub = @OPTION_RAUMERHIT_HF_SUB
+byte jet_destroy_hf_add = @OPTION_JET_DESTORY_HF_ADD
+byte enemy_destroy_hf_add = @OPTION_ENEMY_DESTROY_HF_ADD
+
+word starterHateFactor = @START_HATE_FACTOR
+
+// Hier koennen wir die Hatefactor Options ueber die Level steuern
+procedure setLevelValues(level)
+begin
+
+  level_name := levelnamelist[level]
+//  showLevelName(level_name)
+
+  starterHateFactor := startHateFactor[level]
+
+  levelvalues := levelvalueslist[level]
+
+  hatemultiply := @getbytearray(levelvalues, 0)
+
+  hf_getdown := @getbytearray(levelvalues, 1)
+  hf_getdown := @shiftleft(hf_getdown, 2)
+
+  optionRaumerShieldStrength := @getbytearray(levelvalues, 2)
+  optionIsEnergySlowdown := @getbytearray(levelvalues, 3)
+  optionIsFireSlowdown := @getbytearray(levelvalues, 4)
+  optionShipCollision := @getbytearray(levelvalues, 5)
+
+  raumershot_hf_add := @shiftleft(hatemultiply, 2)
+  raumerhit_hf_sub := @shiftleft((8 - hatemultiply), 1)
+  jet_destroy_hf_add := @shiftleft(hatemultiply, 3)
+  enemy_destroy_hf_add := @shiftleft(hatemultiply, 4)
+end
+
+// Hier steuern wir die Hatefactor options direkt aus den Options
+procedure setOptionValues()
+begin
+  starterHateFactor := 0
+  hatemultiply := optionHateFactorMode
+
+  hf_getdown := optionHateFactorWait
+  hf_getdown := @shiftleft(hf_getdown, 2)
+
+  // optionRaumerShieldStrength := @getbytearray(levelvalues, 2)
+  // optionEnergySlowdown := @getbytearray(levelvalues, 3)
+  // optionFireSlowdown := @getbytearray(levelvalues, 4)
+  // optionShipCollision := @getbytearray(levelvalues, 5)
+
+  raumershot_hf_add := @shiftleft(hatemultiply, optionHateFactorRaumerShot)
+  raumerhit_hf_sub := @shiftleft((8 - hatemultiply), optionHateFactorRaumerHit)
+  jet_destroy_hf_add := @shiftleft(hatemultiply, 2)
+  enemy_destroy_hf_add := @shiftleft(hatemultiply, optionHateFactorEnemyHit)
+
+end
+
+byte keyWait
+
+byte old_mission_level
+byte max_mission_level
+
+procedure @nextMission()
+begin
+  mission_level := mission_level + 1
+  if mission_level > max_mission_level then
+    mission_level := 1
+
+end
+
+procedure consolekey()
+begin
+  if keyWait > 0 then
+  begin
+    keyWait := keyWait - 1
+  end
+  else
+  begin
+    if @isSelectKey() == 1 then
+    begin
+      use_level := 1
+      level := level + 1
+      if level > 8 then // TODO: max level
+        level := 0
+      keyWait := 7 // zeit zum Entprellen
+    end
+    else
+    begin
+      if @isOptionKey() == 1 then
+      begin
+        use_level := 1
+        @nextMission()
+        keyWait := 7 // zeit zum Entprellen
+      end
+      else
+        keyWait := 2
+    end
+  end
+end
+
+//
+// OO     OO
+// OOO   OOO
+// OOOO OOOO  OOOOOOO  OOOOOOOO  OO     OO
+// OO OOO OO OO     OO OO     OO OO     OO
+// OO  O  OO OOOOOOOOO OO     OO OO     OO
+// OO     OO OO        OO     OO OO     OO
+// OO     OO  OOOOOOO  OO     OO  OOOOOOOO
+//
+
+byte bcd_current_score1 = @bcd_current_score1
+byte bcd_current_score2 = @bcd_current_score2
+byte bcd_current_score3 = @bcd_current_score3
+
+byte bcd_highscore1 = @bcd_highscore1
+byte bcd_highscore2 = @bcd_highscore2
+byte bcd_highscore3 = @bcd_highscore3
+
+procedure showHighscore()
+begin
+  @init_fastscreen($1003)
+  @fast_gotoxy(2,0)
+//  @printff(adr:empty)
+  @printff('%x%x%x   HIGH:%x%x%x',
+  bcd_current_score3, bcd_current_score2, bcd_current_score1,
+  bcd_highscore3, bcd_highscore2, bcd_highscore1)
+end
+
+procedure clearMenu()
+begin
+  showHighscore()
+//  @printff('welcome')
+
+  @init_fastscreen($D800) // MEMORY_SHIP
+
+  @printff('  ')
+  @move($D800, $D801, 259) // 259 = 13 Zeilen * 20 Zeichen - 1
+
+  @sleep5()
+end
+
+byte menuColorAnd = @RS_MENU_COLOR_AND
+
+byte array menucolorlist[1] = [
+$82, // blue
+$02,
+$32, // red
+$02,
+$e2, // yellow
+$52,
+$b2, // green
+$01,
+$01,
+$32,
+$0f,
+$0f,
+$52
+]
+
+procedure showMenu()
+begin
+  clearMenu()
+  menuColorAnd := $ff
+
+  @fast_gotoxy(0,0)
+  @printff(' BY THE ATARI TEAM\n  CDW 1988 - 2020\nPRESS FIRE TO START\n\n\n\n      OPTIONS')
+
+  @fast_gotoxy(0,9)
+  @printff('  USE CURSOR KEYS')
+
+  @generateColorList(adr:menucolorlist)
+end
+
+//
+// OO                                  OO          OOOOOO  OO         OO
+// OO                                  OO         OO       OO
+// OO        OOOOOOO   OOOOOOOO  OOOOOOOO         OO       OOOOOOOO  OOO  OOOOOOOO
+// OO       OO     OO OO     OO OO     OO          OOOOOO  OO     OO  OO  OO     OO
+// OO       OO     OO OO     OO OO     OO               OO OO     OO  OO  OO     OO
+// OO       OO     OO OO     OO OO     OO               OO OO     OO  OO  OOOOOOOO
+// OOOOOOOO  OOOOOOO   OOOOOOOO  OOOOOOOO          OOOOOO  OO     OO OOOO OO
+//                                                                        OO
+
+byte array shipfile[1] = ['D1:SHIP1.COM']
+
+// TODO: wir muessen den Textscreen loeschen
+// alle Displaylistinterrupts auf das Minimum reduzieren, sonst koennte es auf original-HW nicht laufen
+// und "     START GAME...  " anzeigen
+
+byte status = @loadShipStatus
+
+procedure @loadShip()
+begin
+//  kan := 1
+//  @close(kan)
+
+  shipfile[1] := @getCurrentDisk()
+  n := optionShipNumber
+  if n >= 10 then
+    n := n + 55 // A-Z
+  else
+    n := n + 48
+  shipfile[7] := n
+
+  @binload(adr:shipfile, $BC00) // $BC00 is bufferaddress 1kb in Real-RAM
+  status := 0
+end
+
+
+
+word optionposition
+
+procedure @initMenu()
+begin
+  max_mission_level := 10 // TODO: hier max missions eintragen
+
+  initMenuOptions()
+  if use_level == 1 then
+  begin
+    setLevelValues(level)
+    showLevelName(level_name)
+  end
+
+  showMenu()
+
+  oldlevel := level + 1 // must be different at first
+end
+
+byte countOfJets
+byte jetsToDestroy = @RS_MISSION_JETS
+byte enemies = @RS_MISSION_ENEMIES
+byte hits= @RS_MISSION_HITS
+byte shoots= @RS_MISSION_SHOOTS
+// byte energy= @RS_MISSION_ENERGY
+word timeNineteenth = @RS_MISSION_TIME
+byte endlessShip = @RS_MISSION_ENDLESS_SHIP
+
+byte levelHalf // level halbe
+word currentMission
+
+word extraTimeForJets
+
+byte array inversLevel[1] = [2,2,2,2,1,1,1,1,1]
+
+byte array timeInLevel[1] = [
+ 255, // god-mode
+ 255, // easy-peasy
+ 126, // *19/50 = 48s 60s simple
+ 121, // *19/50 = 46s 55s easy
+ 113, // *19/50 = 43s 50s practicable
+ 105, // *19/50 = 40s 44s provocant
+ 94,  // *19/50 = 36s 38s difficult
+ 84,  // *19/50 = 32s 32s complicated
+ 68,  // *19/50 = 26s 26s + (20-4)s suicide
+ 255 ]
+
+byte extraTimeInMission
+
+// wie viele Shoots bis die Energy einen weniger wird
+// byte array shotSlowdown[1] = [255,26,20,14,10,7,5,4,3]
+byte array shotSlowdown[1] = [255,27,24,21,18,15,12,9,6]
+
+// byte array energySlowdown[1] = [255,240,220,200,180,160,140,120,100]
+byte array energySlowdown[1] = [255,240,226,212,198,184,170,156,142]
+
+byte raumerMoveSlowdown = @OPTION_RAUMERMOVE_SLOWDOWN
+byte array moveSlowdown[1] = [255,240,220,200,180,160,140,120,100]
+
+byte array enemiesTokillInMission[1] = [ 0,2,4,6,8,0,11,12,13 ]
+
+procedure @setMission(currentMission)
+begin
+// jetsToDestroy, enemies, hits, shoots, energy, shipNumber
+  // jetsToDestroy := @getByteArray(currentMission, 0)
+  // jetsToDestroy := 0
+  countOfJets := @getByteArray(currentMission, 6)
+
+  if use_level == 1 then
+  begin
+    if mission_level < 10 then
+    begin
+      enemies := @getByteArray(currentMission, 1)
+      enemies := enemies + enemiesTokillInMission[level] / 2
+    end
+    else
+    begin
+      enemies := 10 + enemiesTokillInMission[level]
+    end
+  end
+
+  hits := @getByteArray(currentMission, 2)
+  shoots := @getByteArray(currentMission, 3)
+
+  extraTimeInMission := @getByteArray(currentMission, 4)
+  timeNineteenth := timeInLevel[level] // je 19/50
+
+  if use_level == 1 then
+    optionShipNumber := @getByteArray(currentMission, 5)
+  else
+    optionShipNumber := option_value[13]
+
+//  endlessShip := @getByteArray(currentMission, 7)
+
+  // TODO: Anzahl der zu zerstoerenden Jets berechnet sich aus dem Level
+  // 21 10 5 2
+  levelHalf := level / 2
+
+  if use_level == 1 then
+    jetsToDestroy := @shiftright(countOfJets, inversLevel[level])
+  else
+    jetsToDestroy := 0
+
+  extraTimeForJets := jetsToDestroy * 2 // ~38/50 pro zu vernichtenden Jet
+  extraTimeForJets := @shiftRight(extraTimeForJets, levelHalf)
+
+  // Zeitberechnung an Anzahl der abzuschiessenden Jets haengen
+  // niedriger Level 1/4 der Jets abzuballern
+  // mittlerer Level 1/2
+  // hoher Level 3/4? Alle ist immer schlecht!
+  // Pro Jet 1/2s hinzu addieren zur benoetigten Zeit
+  timeNineteenth := timeNineteenth + extraTimeForJets + extraTimeInMission
+
+  // Fireslowdown
+  if optionIsFireSlowdown == 1 then
+    optionFireSlowdown := shotSlowdown[level]
+
+  // Energyslowdown
+  if optionIsEnergySlowdown == 1 then
+    optionEnergySlowdown := energySlowdown[level]
+
+  raumerMoveSlowdown := moveSlowdown[level]
+end
+
+
+byte key
+byte i, y
+byte menucursor
+
+procedure @inMenu(key)
+begin
+  consolekey()
+  if level != oldlevel or mission_level != old_mission_level then
+  begin
+    setLevelValues(level)
+    showLevelName(level_name)
+    oldlevel := level
+
+    // address := missions[mission_level]
+    // @setMission(address)
+    old_mission_level := mission_level
+  end
+
+  if key == 28 or key == 29 or key == 30 or key == 31 then
+  begin
+    needInitEnemy := 0
+
+    menucursor := optionposition + 2
+
+    if key == 28 then optionposition := optionposition - 1
+    if key == 29 then optionposition := optionposition + 1
+
+    if key == 30 then
+    begin
+      option_value[menucursor] := option_value[menucursor] - 1
+      if option_value[menucursor] < @toWord(option_value_min[menucursor]) then
+        option_value[menucursor] := @toWord(option_value_min[menucursor])
+
+      if optionposition == 0 or optionposition == 2 or optionposition == 5 then
+        needInitEnemy := 1
+    end
+
+    if key == 31 then
+    begin
+      option_value[menucursor] := option_value[menucursor] + 1
+      if option_value[menucursor] > @toWord(option_value_max[menucursor]) then
+        option_value[menucursor] := @toWord(option_value_max[menucursor])
+
+      if optionposition == 0 or optionposition == 2 or optionposition == 5 then
+        needInitEnemy := 1
+    end
+
+    // Sobald in den Optionen rumgefummelt wird, gelten die Level nicht mehr!
+    // einfach durch druecken von option key wieder zu beheben!
+
+    if optionposition < 0 then optionposition := 0
+    if optionposition > 18 then optionposition := 18
+
+    // Menu neu erstellen
+    y := 0
+    for i:=optionposition to optionposition + 4 do
+    begin
+      @fast_gotoxy(0,7 + y)
+      @printff(optionsMenu[i], option_value[i])
+      y:=y+1
+    end
+
+    setMenuOptions()
+
+    if key == 30 or key == 31 then
+    begin
+      showLevelName(adr:str_freestyle)
+      use_level := 0
+      setOptionValues()
+    end
+
+  end
+
+  @fast_gotoxy(0,12)
+  @printff('ABBUC CONTEST - 2020')
+
+end
+
+
+//
+// OO     OO  OO                       OO
+// OOO   OOO
+// OOOO OOOO OOO   OOOOOOO   OOOOOOO  OOO   OOOOOOO  OOOOOOOO   OOOOOOO
+// OO OOO OO  OO  OO        OO         OO  OO     OO OO     OO OO
+// OO  O  OO  OO   OOOOOOO   OOOOOOO   OO  OO     OO OO     OO  OOOOOOO
+// OO     OO  OO         OO        OO  OO  OO     OO OO     OO        OO
+// OO     OO OOOO  OOOOOOO   OOOOOOO  OOOO  OOOOOOO  OO     OO  OOOOOOO
+//
+
+
+byte array missioncolorlist[1] = [
+$b2, // 0 green
+$c2, // 1
+$d2, // 2
+$e2, // 3
+$f2, // 4
+$22, // 5
+$32, // 6
+$41, // 7
+$51, // 8
+$62, // 9
+$7f, // 10
+$8f, // 11
+$92  // 12
+]
+
+string noone = ['             NO ONE\n']
+string atleastone = ['        AT LEAST %d\n']
+
+// jets, enemies, hits, shoots, energy, time
+byte array mission1[1] = [
+  1, // jets to destroyed (haengt z.Z. an der Anzahl der Jets)
+  4, // enemies to destroy
+  9, // hits
+  99, // shoots
+  52, // *19/50 = 20s
+  1, // 'K' Abbuc ship 48+1 ship number
+  21, // count of jets
+  0
+]
+
+byte array mission2[1] = [
+  1, // destroyed jets
+  4, // enemies
+  9, // hits
+  99, // shoots
+  47, // *19/50 = 18s
+  2, // 'J' ship 48+1 ship number
+  20, // count of jets
+  0
+]
+
+byte array mission3[1] = [
+  3, // destroyed jets
+  4, // enemies
+  10, // hits
+  99, // shoots
+  42, // *19/50 = 16s
+  3, // 'L' 48+2 ship number
+  9, // count of jets
+  0
+]
+
+byte array mission4[1] = [
+  5, // destroyed jets
+  5, // enemies
+  9, // hits
+  99, // shoots
+  37, // *19/50 = 14s
+  4, // 'M' 48+3 ship number
+  12, // count of jets
+  0
+]
+
+byte array mission5[1] = [
+  0, // destroyed jets
+  5, // enemies
+  9, // hits
+  99, // shoots
+  32, // *19/50 = 12s
+  5, // 'N' 48+4 ship number
+  23, // count of jets
+  0
+]
+
+byte array mission6[1] = [
+  1, // destroyed jets
+  6, // enemies
+  9, // hits
+  99, // shoots
+  27, // *19/50 = 10s
+  6, // 'O' 48+5 ship number
+  4, // count of jets
+  0
+]
+
+byte array mission7[1] = [
+  4, // destroyed jets
+  6, // enemies
+  9, // hits
+  99, // shoots
+  21, // *19/50 = 8s
+  7, // 'P' 48+6 ship number
+  18, // count of jets
+  0
+]
+
+byte array mission8[1] = [
+  14, // destroyed jets
+  7, // enemies
+  9, // hits
+  99, // shoots
+  16, // *19/50 = 6s
+  8, // 'Q' 48+7 ship number
+  56, // count of jets
+  1
+]
+
+byte array mission9[1] = [
+  7, // destroyed jets
+  7, // enemies
+  9, // hits
+  99, // shoots
+  10, // *19/50 = 4s
+  9, // 'S' ship number
+  15, // count of jets
+  0
+]
+
+byte array mission10[1] = [
+  0, // destroyed jets
+  20, // enemies
+  10, // hits
+  99, // shoots
+  0, // *19/50 = 4s
+  10, // 'T' ship number
+  0, // count of jets
+  1
+]
+
+
+word array missions[1] = [
+0,
+mission1,  // Abbuc Ship
+mission2,
+mission3,
+mission4,
+mission5,
+mission6,
+mission7,
+mission8,
+mission9,
+mission10
+]
+
+// TODO: Anzahl der Missions in @initMenu()!
+
+procedure @showMission(n)
+begin
+  clearMenu()
+  menuColorAnd := $ff
+  @generateColorList(adr:missioncolorlist)
+
+  // TODO: currentMission auswerten und nutzen
+  address := missions[mission_level]
+  @setMission(address)
+
+  @fast_gotoxy(0,0)
+  @printff('  YOUR MISSION +_%d\n',mission_level)
+  @printff('  LEVEL: %s',level_name)
+  @fast_gotoxy(0,2)
+
+  if jetsToDestroy != 255 then
+  begin
+    @printff('* JETS TO DESTROY:\n')
+    if jetsToDestroy == 0 then
+      @printff(adr:noone)
+    else
+      @printff(adr:atleastone, jetsToDestroy)
+  end
+
+  if enemies != 255 then
+  begin
+    @printff('*ENEMIES TO DESTROY:')
+    if enemies == 0 then
+      @printff(adr:noone)
+    else
+      @printff(adr:atleastone, enemies)
+  end
+
+  if hits != 255 then
+  begin
+    @printff('* YOUR SHIP:\n')
+    if hits == 0 then @printff('  NEITHER GET A HIT\n')
+    if hits < 9  then @printff('GET LESS THEN %d HITS', hits)
+    if hits >= 9 then @printff(' BEWARE YOUR ENERGY\n')
+  end
+
+  if shoots != 255 then
+  begin
+    @printff                    ('* YOUR WEAPON:\n')
+    if shoots == 0 then @printff('     MUST NOT SHOOT\n')
+    if shoots == 1 then @printff('          SAVE AMMO\n')
+    if shoots > 10 then @printff('          OPEN FIRE\n')
+  end
+
+  @printff('\n* LAND ON THE SHIP')
+
+//  if energy != 255 then
+//  begin
+//    @printff                    ('* ENERGY LEVEL\n')
+//    if energy == 1 then @printff('         BE CAREFUL\n')
+//    if energy == 2 then @printff('       MORE RESPECT\n')
+//    if energy == 3 then @printff('            RESPECT\n')
+//    if energy == 4 then @printff('             BEWARE\n')
+//    if energy == 5 then @printff('             NOTICE\n')
+//  end
+
+//  @printff('\n* WATCH OUT FOR\n TALL BUILDINGS\n')
+
+end
+
+byte array resultcolorlist[1] = [
+$02, // 0 green
+$82, // 1
+$02, // 2
+$02, // 3
+$02, // 4
+$02, // 5
+$02, // 6
+$01, // 7
+$01, // 8
+$02, // 9
+$02, // 10
+$0f, // 11
+$92  // 12
+]
+
+byte done_jets
+
+procedure check_jets()
+begin
+  done_jets := 0
+  if jetsToDestroy == 0 and @getDestroyedJets() > 0 then
+  begin
+  end
+  else
+    if @getDestroyedJets() >= jetsToDestroy then
+    begin
+      done_jets:=1
+    end
+end
+
+byte done_enemies
+procedure check_enemies()
+begin
+  done_enemies := 0
+  if enemies == 0 and @getKilledEnemies() > 0 then
+  begin
+  end
+  else
+    if @getKilledEnemies() >= enemies then
+    begin
+      done_enemies := 1
+    end
+end
+
+byte done_hits
+procedure check_hits()
+begin
+  done_hits := 0
+  if @getRaumerHits() <= hits then
+  begin
+    done_hits := 1
+  end
+end
+
+byte done_shoots
+procedure check_shoots()
+begin
+  done_shoots := 0
+  if shoots == 0 and @getRaumerShoots() > 0 then
+  begin
+  end
+  else
+  begin
+    done_shoots := 1
+  end
+end
+
+word statusTime = @RS_STAT_TIME
+byte timeValue = @RS_STAT_TIME_STATUS
+
+byte done_time
+procedure check_time()
+begin
+  done_time := 0
+  if statusTime ! timeValue != 0 then
+  begin
+    done_time := 1
+  end
+end
+
+byte done, line
+byte mission_failed = @RS_MISSION_FAILED
+
+procedure setRightColorlineAtDone(done, line)
+begin
+  if done == 1 then
+  begin
+    resultcolorlist[line] := $b0
+  end
+  else
+  begin
+    resultcolorlist[line] := $30
+    mission_failed := 1
+  end
+end
+
+
+procedure @checkMissionStatus()
+begin
+   mission_failed := 0
+   check_time()
+   setRightColorlineAtDone(done_time, 3)
+   check_jets()
+   setRightColorlineAtDone(done_jets, 5)
+   check_enemies()
+   setRightColorlineAtDone(done_enemies, 6)
+   check_hits()
+   setRightColorlineAtDone(done_hits, 7)
+   check_shoots()
+   setRightColorlineAtDone(done_shoots, 8)
+end
+
+
+procedure incrementScoreByRestTime()
+begin
+   i := 0
+   @INIT_BCD_REST_TIME()
+   while timeValue > 0 do
+   begin
+     @calcTimeValue()
+     i := i + 1
+     if i>50 then
+     begin
+       i := 0
+       @INC_BCD_REST_TIME()
+       @ADD_CURRENT_SCORE($01)
+     end
+   end
+end
+
+byte champ
+
+function @isChamp()
+begin
+  champ := 1
+  if use_level == 0 then
+  begin
+    if optionEnemyShotStrength==0 or optionShipCollision==0 then
+    begin
+     champ := 0
+    end
+  end
+  else
+  begin
+    if level == 0 then champ := 0
+  end
+  return champ
+end
+
+byte min, sec
+
+procedure @showResultMission()
+begin
+  clearMenu()
+  menuColorAnd := $ff
+
+  champ := @isChamp()
+
+  if @getLanding() == 0 then    // landing == 0 abgestürzt, irgendwo
+   begin
+     @fast_gotoxy(5,4)
+     @printff('YOU LOOSE!')
+     mission_failed := 1
+     resultcolorlist[4] := $e0
+
+     if champ == 1 then
+       @check_score()
+   end
+  else
+   begin
+     @checkMissionStatus()
+
+     @fast_gotoxy(0,1)
+     if mission_failed == 1 then
+     begin
+       @printff(' MISSION +_%d FAILED',mission_level)
+     end
+     else
+     begin
+       @printff('MISSION +_%d SUCCESS',mission_level)
+
+//       @printff('Rest time value %d\n', timeValue)
+     end
+
+     @fast_gotoxy(0,3)
+
+     min := @sec_min_minutes()
+     sec := @sec_min_seconds()
+     incrementScoreByRestTime()
+
+     @printff('* TIME:%x:%x REST:%x', min, sec, @GET_BCD_REST_TIME())
+     @printff('\n')
+     @printff('* %d DESTROYED JETS\n', @getDestroyedJets())
+
+     @printff('* %d SHOT ENEMIES\n', @getKilledEnemies())
+
+     @printff('* %d OWN HITS\n', @getRaumerHits())
+
+     @printff('* %d SHOOTS\n', @getRaumerShoots())
+
+     @printff('* %d COLLISIONS\n', @getBuildingCollisions())
+
+     // MOVE STICK fuer next Mission
+
+     resultcolorlist[10] := $e0
+     if mission_failed == 1 then
+     begin
+       @printff('  MOVE \\ TRY AGAIN')
+     end
+     else
+     begin
+       if mission_level < max_mission_level then
+         @printff('MOVE \\ NEXT MISSION')
+       else
+         @printff(' ALL MISSIONS DONE')
+     end
+
+     if champ == 1 then
+       @check_score()
+
+     if mission_failed == 0 then
+     begin
+       // DEBUG OUTPUT
+       // @printff('i:=%d\n', i)
+       // @printff('level:=%d\n', level)
+       // @printff('use_level:=%d\n\n', use_level)
+
+       @fast_gotoxy(0,12)
+       if champ == 0 then
+         @printff(' GOD-MODE?  LOOSER!')
+       else
+       begin
+         if mission_level == max_mission_level then
+         begin
+           @printff('  CONGRATULATIONS!')
+           if level < 8 then  // TODO: max_level
+           begin
+             level := level + 1
+             setLevelValues(level)
+           end
+         end
+       end
+     end
+   end
+
+  @generateColorList(adr:resultcolorlist)
+  showHighscore()
+  @init_fastscreen($D800) // MEMORY_SHIP
+end

@@ -1,0 +1,173 @@
+// cdw by 'The Atari Team' 2020
+// licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
+
+// Game loader
+
+program loadgame
+lomem=$ad00
+
+word filename
+word buffer
+
+byte wait
+
+byte array oxygenefont[1] = ['D1:FONT.COM']
+
+procedure loadFont()
+begin
+  @fast_gotoxy(12, 10)
+  @printff('Load font...   ')
+  oxygenefont[1] := @getCurrentDisk()
+  @binload(adr:oxygenefont, buffer)
+end
+
+byte array oxygenemenufont[1] = ['D1:MENUFONT.COM']
+
+procedure loadMenuFont()
+begin
+  @fast_gotoxy(12, 11)
+  @printff('Load menu font...   ')
+  oxygenemenufont[1] := @getCurrentDisk()
+  @binload(adr:oxygenemenufont, buffer)
+end
+
+
+
+byte array asciiship[1] = ['D1:ASCIISHP.DAT']
+
+procedure loadAsciiShip()
+begin
+  asciiship[1] := @getCurrentDisk()
+  @binload(adr:asciiship, buffer)
+end
+
+
+
+byte array displaylist[1] = ['D1:DSPLIST.COM']
+
+procedure loadDisplaylist()
+begin
+  @fast_gotoxy(12, 9)
+  @printff('Load display list...')
+  displaylist[1] := @getCurrentDisk()
+  @binload(adr:displaylist, buffer)
+end
+
+
+
+byte array shieldfont[1] = ['D1:SHLDFONT.COM']
+
+procedure loadShieldFont()
+begin
+  @fast_gotoxy(12, 12)
+  @printff('Load shield font...')
+  shieldfont[1] := @getCurrentDisk()
+  @binload(adr:shieldfont, buffer)
+end
+
+
+
+byte array lettering[1] = ['D1:OXYLOGO.COM']
+
+procedure loadLettering()
+begin
+  @fast_gotoxy(12, 13)
+  @printff('Load logo...')
+  lettering[1] := @getCurrentDisk()
+  @binload(adr:lettering, buffer)
+end
+
+
+
+byte chbas = 756   // High address of font
+word start
+
+procedure copyFont()
+begin
+  start := @makeword(0, chbas)
+  @ACTIVATE_ROM()
+  @move(start, buffer, 1024)
+  @ACTIVATE_RAM()
+  @move(buffer, start, 1024)
+end
+
+procedure init()
+begin
+  @initCurrentDisk()
+  wait := 1
+  buffer := $A800
+
+  @INIT_SIMPLE_64K()
+  copyFont()
+
+  @init_fastScreen($bc40)
+  @init_set_bytes_per_line(40)
+
+//  @loadGreetings()
+
+  // load game
+
+  loadAsciiShip()
+  @sleep(wait)
+end
+
+// Wir koennen alles bis hier her einfach ueberschreiben durch laden von OXYGENBE.COM
+
+word until_here, we_can_overwrite
+
+byte array game[1] = ['D1:OXYGENBE.COM']
+
+procedure loadGame()
+begin
+  @fast_gotoxy(12, 14)
+  @printff('Load game...   ')
+
+  game[1] := @getCurrentDisk()
+  @binload(adr:game, buffer)
+end
+
+// Hauptroutine
+
+begin
+  init()
+
+  @fast_gotoxy(6, 23)
+  @printff('ABBUC software contest 2020 ...')
+
+  loadDisplaylist()
+  loadFont()
+  loadMenuFont()
+  loadShieldFont()
+  loadLettering()
+
+// Das Laden der Ships geschied im Spiel selbst
+// loadShip()
+
+  loadGame()
+
+// Ab hier wollen wir das Game aktivieren, also schalten
+// wir erstmal das ROM wieder ein!
+  @ACTIVATE_ROM()
+
+  @usr($1000) // Displaylist on, DLI on
+  @sleep(2)
+
+  @usr($1900)      // start game
+
+// Es gibt keinen Weg zurueck zum DOS!
+end
+
+include 'FAST_SCREEN_OUTPUT.INC'
+include 'SCREEN_OUTPUT.INC'
+include 'PRINTF.INC'
+
+include 'BASIC.INC'
+include 'DOS.INC'
+include 'IO.INC'
+// include 'GREETING.INC'
+include 'BINLOAD.INC'
+include 'COMPARE.INC'
+include 'SIMPLE-64K.INC'
+
+// Hack to initialise this program
+include 'STARTAD00.INC'

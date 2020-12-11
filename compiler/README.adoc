@@ -1,0 +1,9 @@
+# Compiler
+
+The compiler itself is not here.
+
+This directory contains only a small excerpt of assembler routines
+used for the game Oxygene Be.
+
+Due to the age of the most source code, it is most the time im german language, sorry.
+

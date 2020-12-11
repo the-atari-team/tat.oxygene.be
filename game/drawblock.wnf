@@ -1,0 +1,83 @@
+// cdw by 'The Atari Team' 2020
+// licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
+
+PROGRAM drawblck
+
+LOMEM=$8b00
+
+byte i
+byte oldvalue, value, delta
+byte no
+byte length, shadow
+byte xw
+byte height
+byte restore
+
+word x1,y1
+
+word address, a_string, b_string
+
+procedure drawblock()
+begin
+  xw := 0
+  height := 0
+  if length == 0 then return 0
+
+  address := $9800 + y1*$200 + x1
+  height := 1
+  for i:=0 to length - 1 do
+  begin
+    if y1 + height > 17 then return 0
+
+    value := @getbytearray(a_string, i)
+    if value == '-' or value == $FF then  // naechste Zeile
+    begin
+      xw := 0
+      address := address + $200
+      height := height + 1
+      if restore == 0 then
+        @setByteArray(b_string, i, $FF)
+    end
+    else
+    begin                                 // Zeichen setzen
+      if restore != 0 then
+      begin
+        no := value
+      end
+      else
+      begin
+        no := value - 65 + delta
+        if value == '.' then no := 1
+        if shadow == 1 and xw==0 then no := 21
+
+        oldvalue := @peek(address + xw)
+        @setByteArray(b_string, i, oldvalue)
+      end
+
+      @poke(address + xw, no)
+      xw := xw + 1
+    end
+  end
+end
+
+word array args[1] = @parameter
+
+begin
+  shadow := 0
+  a_string := args[0]
+  b_string := args[1]
+  length := args[2]
+  delta := args[3]
+  x1 := args[4]
+  y1 := args[5]
+  restore := args[6]
+//  shadow := args[6]
+
+  drawblock()
+  @exit(@makeword(xw, height))
+end
+
+include 'ARRAY.INC'
+include 'MATH_NO_IMULT.INC'
+include 'PEEKNPOKE.INC'
+include 'BASIC.INC'

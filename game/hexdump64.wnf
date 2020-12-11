@@ -1,0 +1,218 @@
+// cdw by 'The Atari Team' 2020
+// licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
+
+// Ein Hexdump
+// für den WiNiFe-Compiler
+
+// Entstanden aus diesem Basic
+// #HEXOUT
+// start=$4000
+// do
+//   cls:print "start:";hex$(start);" "
+//   for i=start to start+128 step 8
+//    ?hex$(i);"  ";
+//    for x=%0 to 7: ?hex$(peek(i+x));" ";: next x
+//    for x=%0 to 7
+//     c=peek(i+x)
+//     if c=$9B then c=32
+//     ?chr$(27);chr$(c);
+//    next x:?
+//   next i
+//   get key
+//   if key = 32 or key = 29 then start=start+128
+//   if key=28 then start=start-128
+// loop
+
+program hexdmp64
+
+// own variables
+byte x, c, key
+word address, start, lines
+
+byte CRSINH=752 // Wert ungleich 0 und der Cursor ist unsichtbar
+
+procedure printline(address)
+begin
+  @printff('%X  ', address)
+  for x:=0 to 7 do
+  begin
+    @printff('%x ', @peek(address + x))
+  end
+
+  for x:=0 to 7 do
+  begin
+    c:=@peek(address + x)
+    if c == $9B then c := ' '
+    @printff('%c', c)
+  end
+end
+
+byte bytes
+byte line
+byte chbas = 756   // High address of font
+
+procedure copyFont()
+begin
+  start := @makeword(0, chbas)
+  @move(start, $3C00, 1024)
+  chbas := $3c
+end
+
+byte keyWait
+byte osrom
+
+procedure consolekey()
+begin
+  if keyWait > 0 then
+  begin
+    keyWait := keyWait - 1
+  end
+  else
+  begin
+    if @isSelectKey() == 1 then
+    begin
+      osrom := osrom xor 1
+      key := 1
+      keyWait := 8 // zeit zum entprellen
+    end
+    else
+      keyWait := 2
+  end
+end
+
+byte CH = 764
+byte keycode
+
+procedure checkKey()
+begin
+  keycode := CH
+  if keycode != $ff then
+  begin
+    // CH := 255              // wenn key != 255 CH auf 255 setzen (empfohlen)
+
+    @ACTIVATE_ROM()
+    key := @getchar()
+    @ACTIVATE_RAM()
+
+  end
+end
+
+word array args[1] = @parameter
+
+
+procedure outputHexdump(start)
+begin
+  address := start
+  line := 2
+  while address < start + bytes do
+  begin
+    @fast_gotoxy(1, line)
+    line := line + 1
+
+    printLine(address)
+
+    address := address + 8
+  end
+end
+
+word oldstart
+
+// --------<<<< Hauptprogramm >>>>--------
+begin
+  @init_fastscreen($bc40)
+  @init_set_bytes_per_line(40)
+
+  copyFont()
+  start := $bc00 // args[0]
+
+  @clrscr()
+  chbas := $3c
+  key := 0
+
+  @init_simple_64k()
+  osrom := 0
+
+  @fast_gotoxy(0,0)
+  @printff('Simpler Hexdumper        (c) 2020 by TAT')
+
+  lines := 22
+  bytes := lines * 8
+  outputHexdump(start)
+
+  repeat
+    @waitline(100)
+    @backcolorline($ef)
+
+    consolekey()
+
+    checkKey()
+
+    if key != 0 then
+    begin
+      if osrom == 1 then
+      begin
+        @fast_gotoxy(18, 0)
+        @printff('OS-ROM')
+        @ACTIVATE_ROM()
+      end
+      else
+      begin
+        @fast_gotoxy(18, 0)
+        @printff('OS-RAM')
+        @ACTIVATE_RAM()
+      end
+
+      if key == 32 or key == 29 then
+      begin
+        start:=start + bytes
+      end
+      if key == 28 then
+      begin
+        start:=start - bytes
+      end
+      if key == 30 then
+      begin
+        start:=start - 8 // eine Zeile zurueck
+      end
+      if key == 31 then
+      begin
+        start:=start + 8 // eine Zeile vor
+      end
+
+      if key == 'L' then
+      begin
+        @binload('D:SHIP1.COM', $9000)
+        key := 0
+      end
+
+      if key != 0 then
+         outputHexdump(start)
+
+      key := 0
+    end
+
+  until key == 27
+
+  @ACTIVATE_ROM()
+
+  @exit(0)
+end
+
+include 'FAST_SCREEN_OUTPUT.INC'
+include 'SCREEN_OUTPUT.INC'
+include 'PRINTF.INC'
+
+include 'PEEKNPOKE.INC'
+include 'BACKCOLORLINE.INC'
+
+include 'GETCHAR.INC'
+include 'BASIC.INC'
+
+include 'IO.INC'
+include 'COMPARE.INC'
+// include 'MATH.INC'
+include 'START4000.INC'
+include 'SIMPLE-64K.INC'
+include 'BINLOAD.INC'
+
+// RUNTIME.INC wird immer automatisch angehaengt
