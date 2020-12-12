@@ -1,8 +1,17 @@
 = Oxygene Be
 
+:uri-org: https://github.com/the-atari-team
+:uri-repo: {uri-org}/tat.oxygene.be
+:uri-rel-file-base: link:
+:uri-rel-tree-base: link:
+ifdef::env-site[]
+:uri-rel-file-base: {uri-repo}/blob/master/
+:uri-rel-tree-base: {uri-repo}/tree/master/
+endif::[]
+
 image::atari007.png[]
 
-Or Oxygene Part #2
+Oxygene Part #2 or better Oxygene Be
 
 A horizontal Shoot'em Up Game which should show, what is possible on good old Atari 8bit.
 It needs at least 64kb RAM and will no longer run on Atari 400/800.
@@ -19,7 +28,7 @@ Find a ready to run version in release folder.
 == To build from source
 
 Stay in `game` folder and execute `make` from a shell. On Windows use git-bash.
-For more information read the link:[game/readme.adoc]
+For more information read the {uri-rel-file-base}game/README.adoc[game readme]
 
 
 == Game play
@@ -27,19 +36,19 @@ For more information read the link:[game/readme.adoc]
 1. At first, insert disk and boot without basic.
 2. The loader occurs after some sector reads. It takes a while to read 64kb.
 3. The main menu occurs, here you can choose the level and mission.
-   There are some more options. Simply use the cursor keys to walk through this options.
-4. Leave main menu by trigger or space key.
+   There are some more options. Simply use the cursor keys to walk through these options.
+4. Leave the main menu by trigger or space key.
    Now you see mission overview. It shows you, what to have to do in the game.
 5. The game starts with space key or trigger. Play!
-   With your small space craft, fly horizontal over a big ship and destroy small jets on
+   With your small spacecraft, fly horizontal over a big ship and destroy small jets on
    runways all over the big ship. Also destroy the enemies in front.
    The enemies shoot simple single shoots, but they get more angry the more you
    kill them or destroy jets. The color of the enemies changed.
-   Are all need jets and enemies destroyed, land your space craft on a empty runway near
+   Are all need jets and enemies destroyed, land your spacecraft on an empty runway near
    the end of the big ships. To do so, fly straightforward over the small arrows from
    the left side.
    To make missions not so simple, there exists high buildings on the big ship, see there
-   shadow. A touch cost lot of energy, most the time the own space craft.
+   shadow. A touch cost lot of energy, most the time the own spacecraft.
    So be careful. Tip: fly slowly.
 6. At the end you get a status report what you have done.
    If all is green, mission is successful.
@@ -48,17 +57,17 @@ For more information read the link:[game/readme.adoc]
 
 == technical
 
-* All space craft animations are new, there are more and better animations.
-* Also the shoots are animated. Looks nicer.
+* All spacecraft animations are new, there are more and better animations.
+* Also, the shoots are animated. Looks nicer.
 * There are different enemies. Up to 4 in a vertical manner.
-* The Atari display lists are optimized, take less memory. The Oxygene Be logo is down sized to 32bytes per line.
+* The Atari display lists are optimized, take less memory. The Oxygene Be logo is downsized to 32bytes per line.
 * The Atari display list interrupts are all new.
 * There are more colors at the same time on the screen.
-* The space craft has an energy shield, simple hits of enemies will not kill you but decrease your energy.
+* The spacecraft has an energy shield, simple hits of enemies will not kill you but decrease your energy.
 * Joy of use is better than in the old game.
 * There are no random enemies which shoot at random time.
-* The enemies came all the time of the front, change of direction and the enemies came from the other side.
-* Enemies has 3 different shoot types in different speed.
+* The enemies came all the time of the front, change of direction, and the enemies came from the other side.
+* Enemy has 3 different shoot types in different speed.
 * Always the enemy near you will fire.
 * There exist a hate-factor, the more jets and enemies you kill the more decrease the factor.
   You see it at the color of the enemies.
@@ -67,15 +76,15 @@ For more information read the link:[game/readme.adoc]
 * Different count of enemies has to kill.
 * The time runs out. But due to a bug, this is not relevant.
 * There exist different difficult level. From god-mode up to suicide level.
-* There exist an extra option menu so you can play with different options. Simple use the cursor keys.
+* There exist an extra option menu, so you can play with different options. Simple use the cursor keys.
 * A highscore exist.
 
 == Updates after Abbuc Software Contest 2020
 
 * Due to some sync problems within NTSC (60hz) some optimizations were made:
   * Displaylist interrupt cleanup, fewer interrupts were used for the Oxygene Be logo.
-  * speedup in function clear ememy shots
-  * Compiler completely rewritten in Java with lot of peephole optimizations.
+  * speedup in function clear enemy shots
+  * Compiler completely rewritten in Java with a lot of peephole optimizations.
 
 This should help to avoid flickering most the time.
     
@@ -86,9 +95,9 @@ This should help to avoid flickering most the time.
 * The switch between RAM and OS comes from TurboBasic. Source-code follows if there exist interest.
 * The fonts, images and ship graphics are single files, this simplifies the exchange.
 * The TAT Sign based on player missile gfx also, saves some memory.
-* The Space craft takes 3 player with its shadow and 2 missiles.
-* Space craft shoot takes one missile.
-* Enemies take on player due to the time limitations on the simple 8 bit computer there are no
+* The spacecraft takes 3 player with its shadow and 2 missiles.
+* Spacecraft shoot takes one missile.
+* Enemies take on player due to the time limitations on the simple 8-bit computer there are no
   more display interrupt tricks to show the enemies.
 * Enemy shoot take one missile which is differently animated and differently dangerous.
 * The big ship takes 17 * 512 bytes and will all the time reload from disk.
@@ -96,7 +105,7 @@ This should help to avoid flickering most the time.
 * There exist a simple editor to create such big ships.
 * The energy level line is a simple GTIA-Trick on a graphics 0 line with a simple font and dithering.
 * So it looks like you have 11 colors in one line. The small ship on the right is a player.
-* Sound is complete new created, near by a simple sound generator from P.Finzel out of
+* Sound is complete new created, nearby a simple sound generator from P.Finzel out of
   his book "Hexenküche".
 * Unfortunately there is no theme song yet.
 
@@ -113,14 +122,14 @@ It supports:
 * functions/procedures with more than 3 parameters
 * works also recursive until 6502 stack overflows
 * Supports relative complex math expressions, also with inline function calls.
-* Multiply and divisions in a 2-complement are replaced by binary shift.
+* Multiply and divisions in a 2-complement are replaced by a binary shift.
 * Knows if-then-else
 * for- while- repeat-until loops
 * Ok there exist an overhead to real assembler, but it makes programming so much easier.
 * The compiler works perfect with other routines written in assembler together.
 * A nice goody, the source build by the compiler runs most the time also
 within Atari-(Turbo)-Basic environment,
-  because it uses only the Atari floating point zero page registers 212-255.
+  because it uses only the Atari floating-point zero-page registers 212-255.
 * The compiler is a single pass compiler. It loads the source from disk/harddisk and translate it to assembler.
   The generated assembler code is near compatible to MAC/65 but full compatible to atasm cross assembler.
 

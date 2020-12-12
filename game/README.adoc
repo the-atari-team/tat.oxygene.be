@@ -1,5 +1,14 @@
 = Oxygene Be Sources
 
+:uri-org: https://github.com/the-atari-team
+:uri-repo: {uri-org}/tat.oxygene.be
+:uri-rel-file-base: link:
+:uri-rel-tree-base: link:
+ifdef::env-site[]
+:uri-rel-file-base: {uri-repo}/blob/master/
+:uri-rel-tree-base: {uri-repo}/tree/master/
+endif::[]
+
 image::atari000.png[]
 
 
@@ -35,11 +44,11 @@ because the wnf-compiler only creates assembler files.
 
 To build the game from source, just type **make**.
 
-Within build, the atari800-Emulator will be started and compress the ships. At 'Ready' you need to leave the emulator
+Within build, the atari800-Emulator will be started and compress the ships. At 'Ready', you need to leave the emulator
 by press F9 key.
 
 After full build you find a oxygene-game.atr in this folder. To start the game, **make start-game**
 
 == ship editor
 
-See link:[ship-editor.adoc]
+See {uri-rel-file-base}game/ship-editor.adoc[ship editor doc]
