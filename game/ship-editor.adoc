@@ -14,7 +14,7 @@ To create big ships for Oxygene Be, there exists a simple editor.
 == start editor
 
 **make editor** in this directory will start the ship editor.
-If not, see preparations part in this {uri-rel-file-base}game/README.adoc[readme]
+If not, see preparations part in this {uri-rel-file-base}README.adoc[readme]
 
 To start the editor fast, turbo mode of atari800 emulator is used,
 to leave the turbo-mode, press F12 first. Now normal Atari 8bit speed is on.

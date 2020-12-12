@@ -51,4 +51,4 @@ After full build you find a oxygene-game.atr in this folder. To start the game, 
 
 == ship editor
 
-See {uri-rel-file-base}game/ship-editor.adoc[ship editor doc]
+See {uri-rel-file-base}ship-editor.adoc[ship editor doc]
