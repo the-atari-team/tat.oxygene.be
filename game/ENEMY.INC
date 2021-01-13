@@ -8,8 +8,8 @@
 
  .local
 
-GRAFP0=$D00D
-GRAFM=$D012
+; GRAFP0=$D00D
+; GRAFM=$D012
 
 ; ---------------------------------------------------------------------------
 ; TODO: so umbauen, das nur ein Byte (PMField) genutzt wird, da das PM-Field sowieso nur an 2k Adressen ($800) liegen kann

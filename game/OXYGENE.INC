@@ -9,6 +9,9 @@
 ; statt @sleep(5), dies hier nutzen
 ; .if .ref @sleep5
 @sleep5
- LDY #5
- JMP @outerpauseloop
+ LDA #5
+
+ LDY #1
+ STA (@HEAP_PTR),Y
+ JMP @pause
 ; .ENDIF

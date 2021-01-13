@@ -26,24 +26,24 @@ byte initDone = @RS_INIT_DONE
 
 // byte array HPOSM[4]=53252
 
-byte array SIZEP[4]=53256       // fuer collisions
+byte array SIZEP[4]=@       // fuer collisions
 
 // byte array COLPF[4]=53270
 
-byte COLBK=53274
+byte COLBK=@
 
 // byte array PCOLR[4]=704 // Schatten von 53266-9
 // byte array COLOR[5]=708 // Schatten von 53270-4
 
-byte HITCLR=53278 // loeschen der Kollisionsregister
+byte HITCLR=@ // loeschen der Kollisionsregister
 
 // --- POKEY ---
 
-byte RANDOM=53770 // $d20a
+byte RANDOM=@ // $d20a
 
 // --- ANTIC ---
 
-byte PMBASE=54279 // 2kb Grenze ($800)
+byte PMBASE=@ // 2kb Grenze ($800)
 
 byte GPRIOR=623
 
@@ -143,8 +143,8 @@ word speedw
 //          OOOOOOOO
 
 // ----------------------------------------------
-byte GRACTL = 53277
-byte SDMCTL = 559
+byte GRACTL = @
+byte SDMCTL = @
 
 procedure initPlayerMissile()
 begin
@@ -1971,7 +1971,7 @@ byte showDisplayList = @RS_SHOW_DISPLAY_LIST
 byte needInitEnemy = @RS_NEED_INIT_ENEMY
 byte menuexit
 
-byte status = @loadShipStatus
+byte loadstatus = @loadShipStatus
 
 //byte array allColor[27] = @RS_ALL_COLOR
 
@@ -2473,7 +2473,7 @@ begin
 
       @init_audio_hardware()
 
-      if status > 127 then
+      if loadstatus > 127 then
       begin
         menuexit := 0
         showDisplayList := 1 // Back to Menu!

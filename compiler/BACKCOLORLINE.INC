@@ -7,9 +7,6 @@
 
   .LOCAL
 
-?WSYNC=54282
-?COLBK=53274
-
 ; @backcolorline(color) setzt die Hintergrundfarbe auf color in exakt der Bildschirmzeile
 ; in der sich der Elektronenstrahl gerade befindet.
 ; .IF .REF @backcolorline
@@ -17,12 +14,12 @@
  LDY #1
  LDA (@HEAP_PTR),Y
 
- STA ?WSYNC
+ STA WSYNC
 
  LDX 712 ; COLOR0+4
- STA ?COLBK
- STA ?WSYNC
+ STA COLBK
+ STA WSYNC
 
- STX ?COLBK
+ STX COLBK
  RTS
 ; .ENDIF

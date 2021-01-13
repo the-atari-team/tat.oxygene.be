@@ -9,9 +9,6 @@
 
    .LOCAL
 
-?ROWCRS=84
-?COLCRS=85 ; 2
-
 ?PRINTFF_COLOR = @REG+8
 
 ; ----------------------------------------------------
@@ -47,13 +44,7 @@
  ORA ?PRINTFF_COLOR
  TAX
 
-; wird bei @printff gesetzt
-; LDA @CURRENT_CURSOR_ROW
-; STA @REG
-; LDA @CURRENT_CURSOR_ROW+1
-; STA @REG+1
-
- LDY ?COLCRS
+ LDY COLCRS
  TXA
  STA (@REG+6),Y
 
@@ -62,7 +53,7 @@
  CPY ?BYTES_PER_LINE
  BPL ?CURSOR_NEXTLINE
 
- STY ?COLCRS
+ STY COLCRS
 
  LDY #0               ; error code!
  LDX #0
@@ -71,9 +62,9 @@
 
 ?CURSOR_NEXTLINE
  LDA #0
- STA ?COLCRS
+ STA COLCRS
 
- INC ?ROWCRS
+ INC ROWCRS
 
  CLC
  LDA @REG+6
@@ -111,8 +102,8 @@
      STA @CURRENT_CURSOR_ROW
 
      DEY            ; save a byte
-     STY ?COLCRS
-     STY ?ROWCRS
+     STY COLCRS
+     STY ROWCRS
 
 ; Der default ist 20 bytes
      LDA #20
@@ -142,12 +133,12 @@
 @FAST_GOTOXY
  LDY #1
  LDA (@HEAP_PTR),Y
- STA ?COLCRS
+ STA COLCRS
 ; X-position wird spaeter addiert
 
  LDY #3
  LDA (@HEAP_PTR),Y
- STA ?ROWCRS
+ STA ROWCRS
  TAY
 
  LDA ?SCREEN_UPPER_LEFT

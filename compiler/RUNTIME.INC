@@ -9,6 +9,9 @@
 ; Das (Atari)Basic legt grundsätzlich ein Byte im Stack ab, der abgeholt werden muss
 ; das ist der Parametercount
 ; jeder Parameter legt 2 weitere Bytes im Stack ab, die geholt werden müssen.
+; to use parameter from basic within compiler, insert the following line in your wnf file
+; word array args[1] = @PARAMETER
+
 @BASIC_MAIN
      PLA
      STA @PARAMETERCOUNT
@@ -31,20 +34,39 @@
 ; Wir müssen Y auf den Heap-pointer addieren
      JMP @MAIN_FROM_BASIC
 
-; Ruecksprung zum Aufrufer, Parameter legen wir in @BININT ab
+; Ruecksprung zum Aufrufer, Parameter legen wir in BININT ab
 ; Wir können hier auch mir JSR hineinspringen, weil TXS den Stack verbiegt ist das RTS ein Rücksprung ins Basic
 @EXIT
       LDY #2
       LDA (@HEAP_PTR),Y ; Wert holen
-      STA @BININT+1
+      STA BININT+1
       DEY
       LDA (@HEAP_PTR),Y
-      STA @BININT
+      STA BININT
 
      LDX ?STACKPOINTER
      TXS
 
      RTS
+
+; Here jump in with a address given in register X,Y (y+256*x)
+@FUNCTION_POINTER
+; doesn't work as expected, need fkt:=adr:ptr-1
+;  TXA
+;  PHA
+;  TYA
+;  PHA
+;  RTS
+
+; SMC-Code!
+;  STY ?ADDRESS+1
+;  STX ?ADDRESS+2
+;?ADDRESS
+;  JMP $4000
+
+ STY @FKT_PTR
+ STX @FKT_PTR+1
+ JMP (@FKT_PTR)
 
 ; Hilfsroutine um an die Asserts zu kommen, die jeder fehlerhafte @Assert(condition) erzeugt.
 @GETASSERTS

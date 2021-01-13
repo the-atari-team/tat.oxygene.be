@@ -7,8 +7,8 @@
    .LOCAL
 
 ; Hardware-Treibertabellen
-EDITRV = $E400  ; Editor
-SCRENV = $E410  ; Screen
+; EDITRV = $E400  ; Editor
+; SCRENV = $E410  ; Screen
 ; KEYBDV = $E420  ; Keyboard
 
 ; Jeder Treiber sieht wie folgt aus

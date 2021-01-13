@@ -23,10 +23,8 @@
       PHA
       RTS
 
-?CONSOL=53279
-
 @isStartKey
-   LDA ?CONSOL
+   LDA CONSOL
    AND #~00000001
    BEQ ?KEY_PRESSED
 
@@ -41,13 +39,13 @@
    RTS
 
 @isOptionKey
-   LDA ?CONSOL
+   LDA CONSOL
    AND #~00000100
    BEQ ?KEY_PRESSED
    BNE ?KEY_NOT_PRESSED
 
 @isSelectKey
-   LDA ?CONSOL
+   LDA CONSOL
    AND #~00000010
    BEQ ?KEY_PRESSED
    BNE ?KEY_NOT_PRESSED

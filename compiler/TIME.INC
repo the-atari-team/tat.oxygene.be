@@ -6,8 +6,6 @@
 
    .LOCAL
 
-?PAL=53268
-
 ; braucht SCREEN_OUTPUT.INC
 
 ; Der Atari merkt sich in 3 Bytes die 1/50s seit dem System-Start
@@ -23,11 +21,11 @@
   JSR @VSYNCTIME
 
   SEI
-  LDA 18
+  LDA RTCLOK
   STA ?START_TIMER
-  LDA 19
+  LDA RTCLOK+1
   STA ?START_TIMER+1
-  LDA 20
+  LDA RTCLOK+2
   STA ?START_TIMER+2
   CLI
   RTS
@@ -37,11 +35,11 @@
 ;
 @STOPTIME
   SEI
-  LDA 18
+  LDA RTCLOK
   STA ?STOP_TIMER
-  LDA 19
+  LDA RTCLOK+1
   STA ?STOP_TIMER+1
-  LDA 20
+  LDA RTCLOK+2
   STA ?STOP_TIMER+2
   CLI
 
@@ -66,9 +64,9 @@
 ; Wir syncronisieren uns mal und warten so lange
 ; bis der Inhalt von 20 sich aendert. (VBI)
 @VSYNCTIME
-  LDA 20
+  LDA RTCLOK+2
 ?LOOP
-  CMP 20
+  CMP RTCLOK+2
   BEQ ?LOOP
   RTS
 
@@ -98,7 +96,7 @@
   JSR @DECOUT
 
 ; wir fragen PAL aus und setzen die letzte Zeile entsprechend
-  LDA ?PAL
+  LDA PAL
   CMP #1
   BNE ?ISNTSC2
 
@@ -158,7 +156,7 @@
  INC ?MICROTIMER
 
 ; wir fragen PAL aus und setzen die letzte Zeile entsprechend
- LDA ?PAL
+ LDA PAL
  CMP #1
  BNE ?ISNTSC
 

@@ -128,8 +128,7 @@
  RTS
 ; .ENDIF
 
-?VCOUNT=54283 ; vertikale Bildschirmzeile / 2 bei PAL 0-155
-?PAL=53268
+
 
 ; wartet bis nte Zeile erreicht ist, ggf. ueber die Austastluecke hinaus.
 ; Ein vsync ist somit nicht noetig, wenn die naechste Abfrage nur 2 Zeilen (228 Takte) spaeter erfolgt
@@ -141,7 +140,7 @@
 @waitline
 
 ; wir fragen PAL aus und setzen die letzte Zeile entsprechend
- LDA ?PAL
+ LDA PAL
  CMP #1
  BNE ?ISNTSC
 
@@ -156,7 +155,7 @@
 
  LDY #1
 
- LDA ?VCOUNT
+ LDA VCOUNT
  CMP (@HEAP_PTR),Y
  BEQ ?NO_WAIT_NEED
  BMI ?WAITLOOP2
@@ -164,19 +163,19 @@
 ; groesser als gefordert
 ; wir warten erstmal ab, bis der Elektronenstrahl ganz unten ist
 ?WAITLOOP1
- LDA ?VCOUNT
+ LDA VCOUNT
 ?LASTLINE
  CMP #155
  BMI ?WAITLOOP1
 
 ; Dann warten wir noch bis der Elektronenstrahl wieder bei 0 ist.
 ?FIRSTLINE
- LDA ?VCOUNT
+ LDA VCOUNT
  BNE ?FIRSTLINE
 
 ; Das eigentliche Warten auf die richtige Zeile
 ?WAITLOOP2
- LDA ?VCOUNT
+ LDA VCOUNT
  CMP (@HEAP_PTR),Y
  BMI ?WAITLOOP2
 
@@ -197,15 +196,15 @@
   BEQ ?pauseexit
   TAY
 
-@outerpauseloop
-  LDA 20
+?outerpauseloop
+  LDA RTCLOK+2
 
 ?innerpauseloop
-  CMP 20
+  CMP RTCLOK+2
   BEQ ?innerpauseloop
 
   DEY
-  BNE @outerpauseloop
+  BNE ?outerpauseloop
 
 ?pauseexit
   LDA #0

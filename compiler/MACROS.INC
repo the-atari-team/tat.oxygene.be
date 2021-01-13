@@ -4,47 +4,23 @@
 
 ;Macros
 
-; -----------------------------
 
-;Interne Variablen muessen in der Zero-Page liegen
-; wir wollen nur die 42 Bytes der Floating-Point-Register verwenden
-@BININT = 212                   ; Rueckgabewert Basic
-@AUX  =   212
-
-@PUTARRAY = 212                 ; 2 duerfen innerhalb von Expressions nicht ueberschrieben werden
-@GETARRAY = @PUTARRAY+2         ; 2 dito
-
-@OP   =   @AUX+4                ; 4
-; Ergebnis, Produkt, REST
-@PRODUKT = @AUX+8               ; 2
-@REST =   @AUX+8                ; 2
-@ERG  =   @AUX+8                ; 2
-
-; Das sind Roedelregister, die grundsaetzlich ueberschrieben werden!
-@REG  =   @AUX+10                ; 16 bytes (8 Register)
-
-@RETURN = @REG+12
-@ISMODULO = @REG+14             ; 1
-
-; NOCH FREI     = @AUX+10+16 - @AUX+10+16+11 ; 11
-@DLI_ROEDEL     = @AUX+10+16+9      ; 2 ; 247
-@DISPLAYLIST    = @AUX+10+16+10+1   ; 2 ; 249
-@COLOR_REGISTER = @AUX+10+16+10+3   ; 1 ; 251
-@HEAP_PTR       = @AUX+10+16+10+4   ; 2 ; 252
-
+; Increment a word value by one
     .MACRO WINC
-    INC %1   ; 5
-    BNE W    ; 2+1
-    INC %1+1 ; 5
+      INC %1   ; 5
+      BNE W    ; 2+1
+      INC %1+1 ; 5
 W
     .ENDM
 
+; decrement a word value by one
     .MACRO WDEC
-        LDA %1+0       ;Test if the LSB is zero
-        BNE SKIP       ;If it isn't we can skip the next instruction
-        DEC %1+1       ;Decrement the MSB when the LSB will underflow
-SKIP    DEC %1+0       ;Decrement the LSB
+      LDA %1+0       ;Test if the LSB is zero
+      BNE SKIP       ;If it isn't we can skip the next instruction
+      DEC %1+1       ;Decrement the MSB when the LSB will underflow
+SKIP  DEC %1+0       ;Decrement the LSB
     .ENDM
+
 
 ; Folgendes Macro wird verwendet um den Heap_Ptr zu erhoehen,
 ; wenn Proceduren mit Parametern aufgerufen werden.
@@ -62,6 +38,7 @@ SKIP    DEC %1+0       ;Decrement the LSB
 NO_INC_HIGH_HEAP_PTR
     .ENDM
 
+
 ; Folgendes Macro wird verwendet um den Heap_Ptr zu erniedrigen,
 ; wenn Proceduren mit Parametern aufgerufen wurden.
 ; 11 Bytes (statt 6 Bytes (2+3+1) (lda #1, jsr x, rts))
@@ -78,36 +55,49 @@ NO_INC_HIGH_HEAP_PTR
 NO_DEC_HIGH_HEAP_PTR
     .ENDM
 
+; To store a byte value into a fat byte array, we use @PUTARRAY Pointer
+; to support more optimizations, we use (A + 256 * X) here
 ;Putarrayb Var
-      .MACRO PUTARRAYB
+    .MACRO PUTARRAYB
       CLC             ; 2 putarrayb MACRO
-      TYA             ; 2
+;      TYA             ; 0
       ADC # <%1       ; 2
       STA @PUTARRAY   ; 3
       TXA             ; 2
       ADC # >%1       ; 2
       STA @PUTARRAY+1 ; 3
-      .ENDM
-;             in Summe 16 Zyklen 11 Bytes
+    .ENDM
+;             in Summe 14 Zyklen 10 Bytes
 
+; To get a byte value from a fat byte array, we use @GETARRAY pointer
+; to support some more optimizations we use (A + 256 * X) for set pointer
+; and get the result in akku, extern we need to move it to Y-Register
 ;Getarrayb Var
-      .MACRO GETARRAYB
+    .MACRO GETARRAYB
       CLC             ; 2 Getarrayb MACRO
-;      TYA             ; 2
+;      TYA             ; 0
       ADC # <%1       ; 2
       STA @GETARRAY   ; 3
       TXA             ; 2
       ADC # >%1       ; 2
       STA @GETARRAY+1 ; 3
-      LDX #0          ; 2
-      LDA (@GETARRAY,X) ; 6
-      TAY             ; 2
-      .ENDM
-;             in Summe 26 Zyklen 16 Bytes
-;
+; TODO: LDY #0, LDA (@GETARRAY),Y sollte einen Zyklus schneller sein (5, statt 6 Takte)?
+      LDY #0          ; 2
+      LDA (@GETARRAY),Y ; 6
+; lda (@getarray),y may be faster, but we need to clear X-Register also
+;      LDX #0          ; 2
+;      LDA (@GETARRAY,X) ; 6
+; TODO: TAY hier entfernen und aussen machen!
+;      TAY             ; 2
+    .ENDM
+;             in Summe 24 Zyklen 15 Bytes
+
+; To store a word value into a word array, we use @PUTARRAY Pointer
+; to support more optimizations, we use (A + 256 * X) here
+; first we need to multiply pointer by 2, then add variable
 ; Putarrayw Var
-      .MACRO PUTARRAYW
-      TYA         ; 2 putarrayw MACRO
+    .MACRO PUTARRAYW
+;      TYA         ; 0 putarrayw MACRO
       ASL A       ; 2 Mult (x,y)*2
       TAY         ; 2
       TXA         ; 2
@@ -120,12 +110,17 @@ NO_DEC_HIGH_HEAP_PTR
       TXA         ; 2
       ADC # >%1   ; 2
       STA @PUTARRAY+1 ; 3
-      .ENDM
-;         in Summe 28 Zyklen 17 Bytes
+    .ENDM
+;         in Summe 26 Zyklen 16 Bytes
 
+
+; To get a word value from a word array, we use @GETARRAY pointer
+; to support some more optimizations we use (A + 256 * X) for set pointer
+; first we need to multiply pointer by 2, then add variable
+; and get the result in akku, extern we need to move it to Y-Register
 ; Getarrayw Var
-      .MACRO GETARRAYW
-      TYA           ; 2 Getarrayw MACRO
+    .MACRO GETARRAYW
+;      TYA           ; 0 Getarrayw MACRO
       ASL A         ; 2 Mult (x,y)*2
       TAY           ; 2
       TXA           ; 2
@@ -143,6 +138,6 @@ NO_DEC_HIGH_HEAP_PTR
       TAX           ; 2
       DEY           ; 2
       LDA (@GETARRAY),Y ; 5
-      TAY           ; 2
-      .ENDM
-;          in Summe 46 Zyklen 25 Bytes
+;      TAY           ; 0
+    .ENDM
+;          in Summe 42 Zyklen 23 Bytes
