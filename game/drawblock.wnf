@@ -78,6 +78,6 @@ begin
 end
 
 include 'ARRAY.INC'
-include 'MATH_NO_IMULT.INC'
+include 'MATH.INC'
 include 'PEEKNPOKE.INC'
 include 'BASIC.INC'

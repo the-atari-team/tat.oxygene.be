@@ -12,14 +12,15 @@
 ; der Index muss <= 255 sein,
 ; weil es ueber indirekte Adressierung funktioniert
 @getbytearray
- LDY #2            ; 2  erster Parameter, Adresse des Arrays
+ LDY #1            ; 2  erster Parameter, Adresse des Arrays
  LDA (@HEAP_PTR),Y ; 5 high Wert holen
- STA @REG+1        ; 3
- DEY               ; 2
- LDA (@HEAP_PTR),Y ; 5 low Wert holen
  STA @REG          ; 3
+ INY               ; 2
+ LDA (@HEAP_PTR),Y ; 5 low Wert holen
+ STA @REG+1        ; 3
 
- LDY #3            ; 2 2. Parameter (byte only) ist Index
+; LDY #3            ; 2 2. Parameter (byte only) ist Index
+ INY                ; 2
  LDA (@HEAP_PTR),Y ; 5
  TAY               ; 2
  LDA (@REG),Y      ; 5
@@ -33,13 +34,13 @@
 ; @setByteArray(address, index, value)
 ; .IF .REF @SETBYTEARRAY
 @SETBYTEARRAY
- LDY #2            ; 2  erster Parameter, Adresse des Arrays
+ LDY #1            ; 2  erster Parameter, Adresse des Arrays
  LDA (@HEAP_PTR),Y ; 5 high Wert holen
- STA @REG+1
+ STA @REG
 
- DEY               ; 2
+ INY               ; 2
  LDA (@HEAP_PTR),Y ; 5 low Wert holen
- STA @REG          ; 3
+ STA @REG+1        ; 3
 
  LDY #5            ; 2 3. Parameter (byte only)
  LDA (@HEAP_PTR),Y ; 5
@@ -60,16 +61,14 @@
 ; weil es ueber indirekte Adressierung funktioniert
 ; .IF .REF @getwordarray
 @getwordarray
- LDY #2            ; 2  erster Parameter, Adresse des Arrays
+ LDY #1            ; 2  erster Parameter, Adresse des Arrays
  LDA (@HEAP_PTR),Y ; 5 high Wert holen
- TAX               ; 2 <--- optimierung sta @reg+1
- DEY               ; 2
+ STA @REG          ; 4
+ INY               ; 2
  LDA (@HEAP_PTR),Y ; 5 low Wert holen
- TAY               ; 2 <--- optimierung sta @reg
- STY @REG          ; 3
- STX @REG+1        ; 3
+ STA @REG+1        ; 3
 
- LDY #3            ; 2 2. Parameter (byte only) ist Index
+ INY               ; 2 2. Parameter (byte only) ist Index
  LDA (@HEAP_PTR),Y ; 5
  ASL A             ; 2 Mult mit 2
  TAY               ; 2

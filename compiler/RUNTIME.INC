@@ -3,13 +3,16 @@
 ; licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
 
 ;RUNTIME-Library
+;fuer den WiNiFe-Compiler
 
   .LOCAL
 
-; Das (Atari)Basic legt grundsätzlich ein Byte im Stack ab, der abgeholt werden muss
-; das ist der Parametercount
-; jeder Parameter legt 2 weitere Bytes im Stack ab, die geholt werden müssen.
-; to use parameter from basic within compiler, insert the following line in your wnf file
+; In Atari-Basic a USR(address) call, put always one byte onto the stack
+; this is the value of how much parameters will follow.
+; Every parameter puts 2 more bytes to the stack. This parameters
+; need to pull from stack.
+; To use parameter from Basic within this compiler,
+; insert the following line in your wnf file
 ; word array args[1] = @PARAMETER
 
 @BASIC_MAIN
@@ -31,27 +34,38 @@
 ?REALMAIN
      INY
 
-; Wir müssen Y auf den Heap-pointer addieren
+; We need to add Y-Register to the Heap-pointer
      JMP @MAIN_FROM_BASIC
 
-; Ruecksprung zum Aufrufer, Parameter legen wir in BININT ab
-; Wir können hier auch mir JSR hineinspringen, weil TXS den Stack verbiegt ist das RTS ein Rücksprung ins Basic
+; Callback function to the caller.
+; Within Atari-Basic there is one return parameter possible.
+; This value need to be in BININT
+; We can call this function by JSR, because the last TXS set the stack
+; to the position at INIT_RUNTIME time. The RTS takes the jump
+; back to Basic
 @EXIT
-      LDY #2
+      LDY #1
       LDA (@HEAP_PTR),Y ; Wert holen
-      STA BININT+1
-      DEY
-      LDA (@HEAP_PTR),Y
       STA BININT
+      INY
+      LDA (@HEAP_PTR),Y
+      STA BININT+1
 
-     LDX ?STACKPOINTER
-     TXS
+ .IF .DEF @INIT_BREAKKEY
+  jsr @RESTORE_BREAKKEY
+ .ENDIF
 
-     RTS
+      LDX ?STACKPOINTER
+      TXS
+      RTS
 
+; function pointer call
+; @(fkt)(...)
 ; Here jump in with a address given in register X,Y (y+256*x)
 @FUNCTION_POINTER
-; doesn't work as expected, need fkt:=adr:ptr-1
+
+; Some old ideas, not taken
+; Doesn't work as expected, need fkt := adr:ptr - 1
 ;  TXA
 ;  PHA
 ;  TYA
@@ -74,22 +88,8 @@
     LDX @ASSERT_FEHLER+1
     RTS
 
-; Add Akku zum Heap_Ptr, wird in Proceduren gebraucht, da add kommuntativ ist, einfach Heap_ptr addieren
-@ADD_TO_HEAP_PTR
-    CLC                ; 2
-    ADC @HEAP_PTR      ; 3
-    STA @HEAP_PTR      ; 3
-    BCS ?INC_HEAD_PTR2 ; 2
-    RTS                ; 6
 
-?INC_HEAD_PTR2
-    INC @HEAP_PTR+1    ; 1+5
-    RTS                ; 6
-
-; 2+3+3+2+(1+5)+6 => 16 Takte  + 2+6 => 8 (lda, jsr) (!) STA @REG kann raus, spart nochmal 3 Takte! (24 Takte)
-
-
-; must be called with Akku set
+; sub akku from heap_ptr
 @SUB_FROM_HEAP_PTR
     STA @REG
 
@@ -103,10 +103,21 @@
 ?DEC_HEAD_PTR
     DEC @HEAP_PTR+1
     RTS
-; 3+2+3+3+3+2+(6)+6 => 22 Takte + 2+6 => 8 (lda, jsr) (30 Takte)
 
-; Hilfsfunktion die den Compiler initialisiert
-@HEAP_INIT
+;
+;    OO              OO     OO                                      OO       OO
+;         OOOOOO          OOOOOOO         OOOOOO  OO   OO OOOOOO  OOOOOOO         OOO OO   OOOOO
+;  OOOO   OO   OO  OOOO     OO            OO   OO OO   OO OO   OO   OO     OOOO   OOOOOOO OO   OO
+;    OO   OO   OO    OO     OO            OO      OO   OO OO   OO   OO       OO   OO O OO OOOOOOO
+;    OO   OO   OO    OO     OO            OO      OO   OO OO   OO   OO       OO   OO O OO OO
+; OOOOOOO OO   OO OOOOOOO    OOOO         OO       OOOOOO OO   OO    OOOO OOOOOOO OO O OO  OOOOO
+;
+; INIT-Runtime
+; This is the only function, we call to initialise before program starts
+; @Parameter: X-Register must contain the Stack Pointer (TSX)
+;             Y-Register will be added to the heap-ptr
+;                        This is very helpful for Atari-Basic parameters
+@INIT_RUNTIME
      STX ?STACKPOINTER
 
      LDA #<@HEAP_MEMORY
@@ -114,14 +125,31 @@
      LDA #>@HEAP_MEMORY
      STA @HEAP_PTR+1
 
-; TODO: Das löschen des ASSERT_FEHLERS sollte hier nicht gemacht werden
+ .IF .DEF @INIT_BREAKKEY
+  jsr @INIT_BREAKKEY
+ .ENDIF
+
+
+; TODO: I don't know, if this is good idea hear
      LDA #0
      STA @ASSERT_FEHLER
      STA @ASSERT_FEHLER+1
 
-; Wir kopieren in Basic die Parameter auf den Heap und verbiegen hier den Heap-Pointer
+; We copy Basic Parameters to our heap and move the Heap-Pointer
      TYA
-     JMP @ADD_TO_HEAP_PTR
+;    JMP @ADD_TO_HEAP_PTR ; due to move next function, we save 3 bytes
+
+; Add Akku zum Heap_Ptr
+@ADD_TO_HEAP_PTR
+    CLC                ; 2
+    ADC @HEAP_PTR      ; 3
+    STA @HEAP_PTR      ; 3
+    BCS ?INC_HEAD_PTR2 ; 2
+    RTS                ; 6
+
+?INC_HEAD_PTR2
+    INC @HEAP_PTR+1    ; 1+5
+    RTS                ; 6
 
 ?STACKPOINTER
      .byte 0
@@ -129,17 +157,16 @@
 @ASSERT_FEHLER
      .word 0
 
-; macht aktuell ein paar Probleme
-; .INCLUDE WINIFE_HEADER.INC
-
-; Hier beginnt der Heap-Speicher, hier wollen wir Parameter fuer
-; alle Funktionen ablegen
+; Here starts the Heap-Memory.
      .BYTE "HEAP"
 
 @PARAMETERCOUNT
 @HEAP_MEMORY
     .byte 0
+
+; @parameter starts one! byte after heap_memory, because from Atari-basic
+; the first byte always contains the count of following parameters.
 @PARAMETER
     .BYTE $de,$ad,$be,$ef
 
-; Hier hinter sollte niemals etwas stehen!
+; Here must not stay anything.

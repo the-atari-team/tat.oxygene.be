@@ -40,7 +40,7 @@ RMARGN=83 ; right margin
 ROWCRS=84 ; row position of the cursor
 COLCRS=85 ; 85,86 colum position of the cursor
 
-DINDEX=87
+DINDEX=87 ; type of graphics
 SAVMSC=88 ; address of the left upper corner of the screen
 ; The text window is TXTMSC (660,661)
 
@@ -106,7 +106,7 @@ BININT = 212                   ; return value for Basic
 @ISMODULO = @AUX+10             ; 1 226
 
 ; working registers will always overwrite! Do not expect they will not changed after function call
-@REG  =   @AUX+11                ; 20 bytes (10 Register) 227
+@REG  =   @AUX+12               ; 26 bytes (13 Register) 224
 
 @COLOR_REGISTER = 251
 
