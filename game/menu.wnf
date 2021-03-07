@@ -1108,7 +1108,7 @@ begin
   if @getLanding() == 0 then    // landing == 0 abgestürzt, irgendwo
    begin
      @fast_gotoxy(5,4)
-     @printff('YOU LOOSE!')
+     @printff('YOU LOSE!')
      mission_failed := 1
      resultcolorlist[4] := $e0
 
