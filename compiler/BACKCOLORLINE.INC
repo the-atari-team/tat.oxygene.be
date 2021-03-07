@@ -11,6 +11,7 @@
 ; in der sich der Elektronenstrahl gerade befindet.
 ; .IF .REF @backcolorline
 @backcolorline
+@backcolorline_i
  LDY #1
  LDA (@HEAP_PTR),Y
 

@@ -11,6 +11,7 @@
 
 ; @generateColorList(adr:menucolorlist)
 @generateColorList
+@generateColorList_I
  LDY #2
  LDA (@HEAP_PTR),Y ; wert holen
  STA @REG+1

@@ -13,6 +13,7 @@
 ; return a new word (high * 256 + low)
 ;  .if .ref @makeword
 @makeword
+@makeword_ii
   LDY #3
   LDA (@HEAP_PTR),Y ; high byte Wert holen
   TAX
@@ -33,6 +34,7 @@
 ; Jump into Address, like Basic
 ;  .if .ref @usr
 @usr
+@usr_i
  LDY #2
  LDA (@HEAP_PTR),Y ; high Wert holen
  STA ?JUMPADR+1
@@ -64,6 +66,7 @@
 ; eignet sich also nicht um Daten ein Byte nach vorne zu schieben. Das Gegenstueck hierzu (move-) ist nicht implementiert.
 ; .IF .REF @move
 @move
+@move_iii
 ; von Adresse
  LDY #2
  LDA (@HEAP_PTR),Y ; high Wert holen
@@ -138,6 +141,7 @@
 
 ;  .if .ref @waitline
 @waitline
+@waitline_i
 
 ; wir fragen PAL aus und setzen die letzte Zeile entsprechend
  LDA PAL
@@ -189,7 +193,9 @@
 ; @sleep(low) wartet low * vsync Zeit. (max 255 1/50s) Dazu wird der interne Zeitzaehler (20) verwendet.
 ; @pause(low) ist das selbe
 @sleep
+@sleep_i
 @pause
+@pause_i
   LDY #1
   LDA (@HEAP_PTR),Y ; high Wert holen
 

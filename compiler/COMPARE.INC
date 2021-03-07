@@ -5,6 +5,7 @@
 
 ;@greaterThan(endaddress, $c000)
 @greaterThan
+@greaterThan_ii
       LDY #2
       LDA (@HEAP_PTR),Y
       STA @REG+1

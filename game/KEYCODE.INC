@@ -9,6 +9,7 @@
 
 ; give a keycode, get a key value only for some keys
 @getKeyFromKeyCode
+@getKeyFromKeyCode_i
  LDY #1
  LDA (@HEAP_PTR),Y
 

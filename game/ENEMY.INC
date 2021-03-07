@@ -16,6 +16,7 @@
 ;       und das hier schon berücksichtigt wird.
 ; Das hier arbeitet nur mit der feinen Auflösung richtig, die 2spaltigen Player sind kleiner
 @CLEARPMFIELD
+@CLEARPMFIELD_I
       LDY #2
       LDA (@HEAP_PTR),Y ; wert holen
 ;      AND #~11111000
@@ -80,6 +81,7 @@
      .byte 0
 
 @CLEARENEMY
+@CLEARENEMY_I
       LDY #2
       LDA (@HEAP_PTR),Y ; wert holen
       TAX
@@ -118,6 +120,7 @@
 
 ; ---------------------------------------------------------------------------
 @COPYENEMY
+@COPYENEMY_III
       LDY #2
       LDA (@HEAP_PTR),Y ; wert holen
       TAX
@@ -954,6 +957,7 @@
     .word 0
 
 @SETENEMYSHOTNUMBER
+@SETENEMYSHOTNUMBER_I
 ; gewuenschte Shotnumber
       LDY #2
       LDA (@HEAP_PTR),Y
@@ -984,6 +988,7 @@
 
 ; ---------------------------------------------------------------------------
 @COPYENEMYSHOT
+@COPYENEMYSHOT_III
       LDY #2
       LDA (@HEAP_PTR),Y ; wert holen
       TAX
@@ -1033,6 +1038,7 @@
 ; ---------------------------------------------------------------------------
 ; Loeschen des Enemy Shot Missiles
 @CLEARENEMYSHOT
+@CLEARENEMYSHOT_I
       LDY #2
       LDA (@HEAP_PTR),Y ; wert holen missile address
       STA @REG+1
@@ -1102,6 +1108,7 @@
 
 ; Killer shot wenn es mal richtig boese zugehen soll...
 @ENEMYSHOT_KILLER
+@ENEMYSHOT_KILLER_IIII
       LDY #2
       LDA (@HEAP_PTR),Y
       STA @REG+1        ; Missiles Adresse

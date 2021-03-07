@@ -12,6 +12,7 @@
 ; der Index muss <= 255 sein,
 ; weil es ueber indirekte Adressierung funktioniert
 @getbytearray
+@getbytearray_ii
  LDY #1            ; 2  erster Parameter, Adresse des Arrays
  LDA (@HEAP_PTR),Y ; 5 high Wert holen
  STA @REG          ; 3
@@ -34,6 +35,7 @@
 ; @setByteArray(address, index, value)
 ; .IF .REF @SETBYTEARRAY
 @SETBYTEARRAY
+@SETBYTEARRAY_III
  LDY #1            ; 2  erster Parameter, Adresse des Arrays
  LDA (@HEAP_PTR),Y ; 5 high Wert holen
  STA @REG
@@ -61,6 +63,7 @@
 ; weil es ueber indirekte Adressierung funktioniert
 ; .IF .REF @getwordarray
 @getwordarray
+@getwordarray_ii
  LDY #1            ; 2  erster Parameter, Adresse des Arrays
  LDA (@HEAP_PTR),Y ; 5 high Wert holen
  STA @REG          ; 4

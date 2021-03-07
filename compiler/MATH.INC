@@ -8,6 +8,7 @@
 
 ; SGN vorzeichen x * 256 + y := SGN(@REG1)
 @SGN
+@SGN_I
       LDY #2
       LDA (@HEAP_PTR),Y ; high wert holen
       STA @REG+1
@@ -38,6 +39,7 @@
 
 ; Vorzeichen entfernen, immer positiv
 @ABS
+@ABS_I
       LDY #2
       LDA (@HEAP_PTR),Y ; wert holen
       STA @REG+1
@@ -66,79 +68,10 @@
        LDX @REG+1
        RTS
 
-; MIN a,b
-@MIN
-      LDY #4
-      LDA (@HEAP_PTR),Y ; wert holen
-      STA @ERG+1
-      DEY
-      LDA (@HEAP_PTR),Y
-      STA @ERG
-; (x*256+y) ist der Wert im Heap
-
-      LDY #2
-      LDA (@HEAP_PTR),Y ; wert holen
-      STA @REG+1
-      DEY
-      LDA (@HEAP_PTR),Y
-      STA @REG
-; (x*256+y) ist der Wert im Heap
-; Bedingung (a>b)
- CPY @ERG
- TXA
- SBC @ERG+1
- BCS ?MINFALSE
- BCC ?MINTRUE
-
-?MINFALSE
- LDY @ERG
- LDX @ERG+1
- RTS
-
-?MINTRUE
- LDY @REG
- LDX @REG+1
- RTS
-
-; MAX a,b
-@MAX
-      LDY #2
-      LDA (@HEAP_PTR),Y ; wert holen
-      STA @ERG+1
-      DEY
-      LDA (@HEAP_PTR),Y
-      STA @ERG
-; (x*256+y) ist der Wert im Heap
-
-      LDY #4
-      LDA (@HEAP_PTR),Y ; wert holen
-      TAX
-      DEY
-      LDA (@HEAP_PTR),Y
-      TAY
-; (x*256+y) ist der Wert im Heap
- STY @REG
- STX @REG+1
-; Bedingung (a>b)
- CPY @ERG
- TXA
- SBC @ERG+1
- BCS ?MAX_FALSE
- BCC ?MAX_TRUE
-
-?MAX_FALSE
- LDY @REG
- LDX @REG+1
- RTS
-
-?MAX_TRUE
- LDY @ERG
- LDX @ERG+1
- RTS
-
 ; Negiert ein gegebenes Word
 ; ist das gleiche wie (x*256+y) := (x*256+y) * -1 nur schneller
 @NEG
+@NEG_I
       LDY #2
       LDA (@HEAP_PTR),Y ; wert holen
       STA @REG+1
@@ -162,6 +95,7 @@
 ; Der Compiler koennte es leisten, ist mir aber zu kompliziert
 ; Beim Ausfuehren weiss das Programm nichts mehr von byte oder word
 @TOWORD
+@TOWORD_I
       LDY #1
       LDA (@HEAP_PTR),Y ; wert holen (ein Byte)
 

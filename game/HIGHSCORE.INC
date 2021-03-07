@@ -12,6 +12,7 @@
 
 ; erhoehe Highscore um Wert aus Parameter
 @ADD_CURRENT_SCORE
+@ADD_CURRENT_SCORE_I
       LDY #1
       LDA (@HEAP_PTR),Y ; wert holen
 

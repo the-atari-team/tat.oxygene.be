@@ -30,6 +30,7 @@
 
 ; Setze die Position des Raumer im Verhaeltnis zum Ship
 @setRaumerXPosition
+@setRaumerXPosition_I
       LDY #2
       LDA (@HEAP_PTR),Y ; wert holen
       TAX
@@ -1007,6 +1008,7 @@
 ; um die Animation zu setzen
 
 @SETRAUMERNUMBER
+@SETRAUMERNUMBER_I
 ; gewuenschte Raumernummer
       LDY #1
       LDA (@HEAP_PTR),Y
@@ -1094,6 +1096,7 @@
 ; ----------------------------------------------------------------------------
 
 @COPYRAUMER
+@COPYRAUMER_IIII
       LDY #2
       LDA (@HEAP_PTR),Y ; wert holen
       TAX
@@ -1252,6 +1255,7 @@
 ;  OO    OO  OOOOOOOO  OOOOOOOO OO  O  OO  OOOOOOO  OO                 OOOOOO  OO     OO  OOOOOOO     OOO
 
 @SETRAUMERSHOTNUMBER
+@SETRAUMERSHOTNUMBER_I
 ; gewuenschte Shotnumber
       LDY #2
       LDA (@HEAP_PTR),Y
@@ -1287,6 +1291,7 @@
       .byte 0
 
 @COPYRAUMERSHOT
+@COPYRAUMERSHOT_III
       LDY #2
       LDA (@HEAP_PTR),Y ; wert holen
       TAX

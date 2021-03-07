@@ -15,6 +15,7 @@
 ; - Strommast
 
 @initCursorBeforeRaumerShot ; (raumerXPosition, raumerShot_x, raumerY, raumerShotCount, raumerYDirection)
+@initCursorBeforeRaumerShot_IIIII
       jsr ?calcCursorBeforeRaumerShot
 
       LDY #5
@@ -106,6 +107,7 @@
 
 ; (raumerXPosition, raumerShot_x)
 @cursorBeforeRaumerShot
+@cursorBeforeRaumerShot_II
       jsr ?calcCursorBeforeRaumerShot
       jmp ?rememberCursorForRaumerShot
 
@@ -195,6 +197,7 @@
 ; Pruefen, was sich kurz vor dem Raumer befindet Kollisionstest
 ; @cursorBeforeRaumer(raumerXPosition, raumerY) ; , raumerXDirection, raumerLastAnimation
 @cursorBeforeRaumer
+@cursorBeforeRaumer_ii
       jsr ?calcCursorBeforeRaumer
 
       STY @REG

@@ -44,6 +44,7 @@
 ; to the position at INIT_RUNTIME time. The RTS takes the jump
 ; back to Basic
 @EXIT
+@EXIT_I
       LDY #1
       LDA (@HEAP_PTR),Y ; Wert holen
       STA BININT

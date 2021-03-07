@@ -9,6 +9,7 @@
 ; @shiftright(value, bits)
 ; shifted value um bits nach rechts (1 bit entspricht geteilt durch 2, 2 bits entspricht geteilt durch 4)
 @shiftright
+@shiftright_ii
       LDY #2
       LDA (@HEAP_PTR),Y ; wert holen
       TAX
@@ -39,6 +40,7 @@
 ; @shiftleft(value, bits)
 ; shifted value um bits nach links (1 bit entspricht mult mit 2, 2 bits entspricht mult mit 4)
 @shiftleft
+@shiftleft_ii
       LDY #2
       LDA (@HEAP_PTR),Y ; wert holen
       STA @REG+1

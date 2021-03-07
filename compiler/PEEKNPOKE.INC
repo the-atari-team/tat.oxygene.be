@@ -18,6 +18,7 @@
 ; Hole ein Byte aus dem Speicher, wie in Basic
 ; .IF .REF @PEEK
 @PEEK
+@peek_i
  LDY #2
  LDA (@HEAP_PTR),Y ; high Wert holen
  STA @REG+1
@@ -34,6 +35,7 @@
 ; .ENDIF
 
 @POKE
+@POKE_II
  LDY #2
  LDA (@HEAP_PTR),Y ; high Wert holen
  STA @REG+1

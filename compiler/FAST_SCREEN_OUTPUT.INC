@@ -91,6 +91,7 @@
 
 ; setzt die linke obere Ecke
 @INIT_FASTSCREEN
+@INIT_FASTSCREEN_I
      LDY #2
      LDA (@HEAP_PTR),Y
      STA ?SCREEN_UPPER_LEFT+1
@@ -122,6 +123,7 @@
 ; 48 Gfx 0 und 559<=breites Anzeigefeld oder horiz. Scrolling
 
 @INIT_SET_BYTES_PER_LINE
+@INIT_SET_BYTES_PER_LINE_I
      LDY #1
      LDA (@HEAP_PTR),Y
      STA ?BYTES_PER_LINE
@@ -131,6 +133,7 @@
 ; und berechnet dabei die NEXT_CURSOR_POSITION neu
 ; WICHTIG, INIT_FASTSCREEN sollte gerufen worden sein
 @FAST_GOTOXY
+@FAST_GOTOXY_II
  LDY #1
  LDA (@HEAP_PTR),Y
  STA COLCRS

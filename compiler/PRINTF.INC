@@ -12,6 +12,11 @@
  .IF .DEF @FASTSCREEN_OUT
 ; Einfachere Version von @printf('F', ...
 @printff
+@printff_i
+@printff_ii
+@printff_iii
+@printff_iiii
+@printff_iiiiiii
  LDY #'F
  STY @PRINTF_TYPE
 

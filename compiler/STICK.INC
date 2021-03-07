@@ -11,6 +11,7 @@
 ; 0=gedrueckt
 ; 1=nicht gedrueckt
 @STRIG
+@STRIG_I
   LDY #1
   LDA (@HEAP_PTR),Y ; der 1. Parameter
   AND #~00000001 ; max 2 Strig
@@ -24,6 +25,7 @@
 ; liefert den originalen Stick Wert, kann nur mit 2 Sticks arbeiten (Atari XL)
 ; 15=nicht bewegt und jedes Bit fuer entsprechende Richtung
 @STICK
+@STICK_I
   LDY #1
   LDA (@HEAP_PTR),Y ; der 1. Parameter
   AND #~00000001 ; max 2 Sticks
@@ -36,6 +38,7 @@
 
 ; liefert 1, wenn Stick(n) nach oben gedrueckt wird
 @STICKUP
+@STICKUP_I
   JSR @STICK
   TYA
   AND #~0001
@@ -53,6 +56,7 @@
 
 ; liefert 1, wenn Stick(n) nach unten gedrueckt wird
 @STICKDOWN
+@STICKDOWN_I
   JSR @STICK
   TYA
   AND #~0010
@@ -61,6 +65,7 @@
 
 ; liefert 1, wenn Stick(n) nach links gedrueckt wird
 @STICKLEFT
+@STICKLEFT_I
   JSR @STICK
   TYA
   AND #~0100
@@ -69,6 +74,7 @@
 
 ; liefert 1, wenn Stick(n) nach rechts gedrueckt wird
 @STICKRIGHT
+@STICKRIGHT_I
   JSR @STICK
   TYA
   AND #~1000

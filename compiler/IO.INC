@@ -16,6 +16,7 @@
 ; Usage: @open(CHANNEL, 4|6|8|12,0,adr:filename)
 ; @return mit Fehler 129, sollte der CHANNEL schon offen sein
 @OPEN
+@OPEN_iiii
       JSR ?GET_CHANNEL
 
       LDY #3
@@ -64,6 +65,7 @@
 ; Schliesst den angegebenen Kanal 0-6 moeglich 1-5 eher zu nutzen
 ; Usage: @close(CHANNEL)
 @CLOSE
+@CLOSE_i
       JSR ?GET_CHANNEL
 
      LDA #12 ; close
@@ -78,6 +80,7 @@
 ; Zeichen >256, Fehler aufgetreten
 ; Usage: value := @get(CHANNEL)
 @GET
+@GET_I
       JSR ?GET_CHANNEL
 
       LDA #7 ; Get Characters
@@ -106,6 +109,7 @@
 ; und schreibt diese direkt in den Speicher ab der angegebene Adresse
 ; Usage: @bget(kanal, adresse, laenge)
 @BGET
+@BGET_iii
       JSR ?GET_CHANNEL
 
       LDA #7 ; Get Characters
@@ -117,6 +121,7 @@
 ; schreibt eine angegebene Länge von Bytes ab der angegebenen Adresse
 ; Usage: @bput(kanal, adresse, laenge)
 @BPUT
+@BPUT_iii
       JSR ?GET_CHANNEL
 
       LDA #11 ; Put Characters
@@ -164,7 +169,8 @@
 
 ; TODO: @PUT
 ; schreibt exact ein Byte in den offenen CHANNEL
- @PUT
+@PUT
+@PUT_ii
       JSR ?GET_CHANNEL
 
       LDA #11       ;Befehl 'Put Characters'
