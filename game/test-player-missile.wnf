@@ -3,6 +3,17 @@
 
 program oxygenbe
 
+//
+//  OOOOOO                                                                    OOOOOOO  OOOOOOO
+// OO    OO                                                                   OO    OO OO
+// OO    OO OO   OO OO     OO  OOOOOOOO  OOOOOOO  OOOOOOOO   OOOOOOO          OO    OO OO
+// OO    OO  OO OO  OO     OO OO     OO OO     OO OO     OO OO     OO         OOOOOOO  OOOOO
+// OO    OO   OOO   OO     OO OO     OO OOOOOOOOO OO     OO OOOOOOOOO         OO    OO OO
+// OO    OO  OO OO   OOOOOOOO  OOOOOOOO OO        OO     OO OO                OO    OO OO
+//  OOOOOO  OO   OO        OO        OO  OOOOOOO  OO     OO  OOOOOOO          OOOOOOO  OOOOOOO
+//                  OOOOOOOO  OOOOOOOO
+
+
 // This is OXYGENE BE (part #2)
 
 // by 'The Atari Team'
@@ -45,7 +56,7 @@ byte RANDOM=@ // $d20a
 
 byte PMBASE=@ // 2kb Grenze ($800)
 
-byte GPRIOR=623
+byte GPRIOR=@
 
 // player missiles
 word PD0,PMM,PM0
@@ -61,7 +72,7 @@ byte enemy_destroy_hf_add = @OPTION_ENEMY_DESTROY_HF_ADD
 
 
 // Keyboard
-byte CH=764
+byte CH=@
 
 byte KRPDEL=729
 byte KEYREP=730
@@ -81,15 +92,17 @@ byte enemyShot_possible
 
 word speedw
 
-// OOOOOOO                                                             OOOOOO             OO                        OO    OO
-// OO    OO                                                           OO    OO                                      OO
-// OO    OO  OOOOOOOO OO     OO OOOO OOO   OOOOOOO  OOOOOOOO          OO    OO OOOOOOOO  OOO  OOOO OOO   OOOOOOOO OOOOOO OOO   OOOOOOO  OOOOOOOO
-// OO    OO OO     OO OO     OO OO OOO OO OO     OO OO     OO         OO    OO OO     OO  OO  OO OOO OO OO     OO   OO    OO  OO     OO OO     OO
-// OOOOOO   OO     OO OO     OO OO  O  OO OOOOOOOOO OO                OO    OO OO     OO  OO  OO  O  OO OO     OO   OO    OO  OO     OO OO     OO
-// OO   OO  OO     OO OO     OO OO  O  OO OO        OO                OOOOOOOO OO     OO  OO  OO  O  OO OO     OO   OO    OO  OO     OO OO     OO
-// OO    OO  OOOOOOOO  OOOOOOOO OO  O  OO  OOOOOOO  OO                OO    OO OO     OO OOOO OO  O  OO  OOOOOOOO    OOO OOOO  OOOOOOO  OO     OO
 //
+// OOOOO                                             OOOO          OO                   OO    OO
+// OO  OO                                           OO  OO                              OO
+// OO  OO  OOOOO OO  OO OOO OO   OOOO  OOOOO        OO  OO OOOOO  OOO  OOO OO   OOOOO OOOOOO OOO   OOOO  OOOOO
+// OO  OO OO  OO OO  OO OOOOOOO OO  OO OO  OO       OO  OO OO  OO  OO  OOOOOOO OO  OO   OO    OO  OO  OO OO  OO
+// OOOO   OO  OO OO  OO OO O OO OOOOOO OO           OO  OO OO  OO  OO  OO O OO OO  OO   OO    OO  OO  OO OO  OO
+// OO OO  OO  OO OO  OO OO O OO OO     OO           OOOOOO OO  OO  OO  OO O OO OO  OO   OO    OO  OO  OO OO  OO
+// OO  OO  OOOOO  OOOOO OO O OO  OOOO  OO           OO  OO OO  OO OOOO OO O OO  OOOOO    OOO OOOO  OOOO  OO  OO
 //
+
+
 
 // TODO: old, sind hier nur noch zum kopieren
 // byte array raumerAnimationOld[256] = [
@@ -261,7 +274,7 @@ end
 // Animationsschritt weiter zu laufen
 // kann jederzeit abgebrochen werden
 byte count
-byte i
+byte i=130
 
 procedure animationEnemy()
 begin
@@ -1190,7 +1203,7 @@ end
 
 word raumerXPosition
 
-word raumerSpeedX
+word raumerSpeedX=128
 byte raumerYDirection
 
 byte energyDecreaseWait
@@ -1490,14 +1503,14 @@ begin
 end
 
 
-
-// OOOOOOO                                                            OO     OO                                                             OO
-// OO    OO                                                           OOO   OOO                                                             OO
-// OO    OO  OOOOOOOO OO     OO OOOO OOO   OOOOOOO  OOOOOOOO          OOOO OOOO  OOOOOOO  OO   OO  OOOOOOO  OOOO OOO   OOOOOOO  OOOOOOOO  OOOOOO
-// OO    OO OO     OO OO     OO OO OOO OO OO     OO OO     OO         OO OOO OO OO     OO OO   OO OO     OO OO OOO OO OO     OO OO     OO   OO
-// OOOOOO   OO     OO OO     OO OO  O  OO OOOOOOOOO OO                OO  O  OO OO     OO OO   OO OOOOOOOOO OO  O  OO OOOOOOOOO OO     OO   OO
-// OO   OO  OO     OO OO     OO OO  O  OO OO        OO                OO     OO OO     OO  OO OO  OO        OO  O  OO OO        OO     OO   OO
-// OO    OO  OOOOOOOO  OOOOOOOO OO  O  OO  OOOOOOO  OO                OO     OO  OOOOOOO    OOO    OOOOOOO  OO  O  OO  OOOOOOO  OO     OO    OOO
+//
+// OOOOO                                            OO   OO                                               OO
+// OO  OO                                           OOO OOO                                               OO
+// OO  OO  OOOOO OO  OO OOO OO   OOOO  OOOOO        OOOOOOO  OOOO  OO   OO  OOOO  OOO OO   OOOO  OOOOO  OOOOOO
+// OO  OO OO  OO OO  OO OOOOOOO OO  OO OO  OO       OO O OO OO  OO OO   OO OO  OO OOOOOOO OO  OO OO  OO   OO
+// OOOO   OO  OO OO  OO OO O OO OOOOOO OO           OO   OO OO  OO OO   OO OOOOOO OO O OO OOOOOO OO  OO   OO
+// OO OO  OO  OO OO  OO OO O OO OO     OO           OO   OO OO  OO  OO OO  OO     OO O OO OO     OO  OO   OO
+// OO  OO  OOOOO  OOOOO OO O OO  OOOO  OO           OO   OO  OOOO    OOO    OOOO  OO O OO  OOOO  OO  OO    OOO
 //
 
 byte direction

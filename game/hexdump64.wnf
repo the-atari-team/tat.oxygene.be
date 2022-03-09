@@ -49,7 +49,7 @@ end
 
 byte bytes
 byte line
-byte chbas = 756   // High address of font
+byte chbas = @   // High address of font
 
 procedure copyFont()
 begin
@@ -80,7 +80,7 @@ begin
   end
 end
 
-byte CH = 764
+byte CH = @
 byte keycode
 
 procedure checkKey()

@@ -42,10 +42,9 @@
  BEQ ?CURSOR_NEXTLINE
 
  ORA ?PRINTFF_COLOR
- TAX
-
+; TAX
  LDY COLCRS
- TXA
+; TXA
  STA (@REG+6),Y
 
 ; Ab hier cursor Movement
@@ -153,16 +152,57 @@
  BEQ ?NO_INC_OF_LINES
 
 ; Y-Cursor * n * Bytes_per_line
-?LOOP
- CLC
- LDA @CURRENT_CURSOR_ROW
- ADC ?BYTES_PER_LINE
- STA @CURRENT_CURSOR_ROW
- BCC ?NO_INC_HIGH
- INC @CURRENT_CURSOR_ROW+1
-?NO_INC_HIGH
- DEY
- BNE ?LOOP
+  sty @op
+  lda ?bytes_per_line
+  sta @op+1
 
+  jsr ?mul8
+
+  clc
+  tya
+  adc ?screen_upper_left
+  sta @current_cursor_row
+  txa
+  adc ?screen_upper_left+1
+  sta @current_cursor_row+1
 ?NO_INC_OF_LINES
+  rts
+
+@FAST_GOTOX
+@FAST_GOTOX_I
+ LDY #1
+ LDA (@HEAP_PTR),Y
+ STA COLCRS
  RTS
+
+;?LOOP
+; CLC
+; LDA @CURRENT_CURSOR_ROW
+; ADC ?BYTES_PER_LINE
+; STA @CURRENT_CURSOR_ROW
+; BCC ?NO_INC_HIGH
+; INC @CURRENT_CURSOR_ROW+1
+;?NO_INC_HIGH
+; DEY
+; BNE ?LOOP
+;
+;?NO_INC_OF_LINES
+; RTS
+
+; https://codebase64.org/doku.php?id=base:short_8bit_multiplication_16bit_product
+; (x*256 + y) = @op * (@op+1)
+?MUL8
+        lda #$00
+        ldy #$08
+        clc
+?m0     bcc ?m1
+        clc
+        adc @OP+1
+?m1     ror
+        ror @OP
+        dey
+        bpl ?m0
+
+        ldy @OP
+        tax
+        rts

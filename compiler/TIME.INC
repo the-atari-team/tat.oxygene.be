@@ -76,7 +76,10 @@
   JSR @STOPTIME
   JMP ?INNER_SHOW_GIVEN_TIME
 
+; output the given value as String like @printf('Benoetigte Zeit: %d in 1/50s(pal)\n', value)
+; or "1/60s (ntsc)" on ntsc systems
 @SHOWGIVENTIME
+@SHOWGIVENTIME_I
   LDY #2
   LDA (@HEAP_PTR),Y ; Wert holen
   TAX

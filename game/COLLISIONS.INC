@@ -15,7 +15,7 @@
 ; - Strommast
 
 @initCursorBeforeRaumerShot ; (raumerXPosition, raumerShot_x, raumerY, raumerShotCount, raumerYDirection)
-@initCursorBeforeRaumerShot_IIIII
+@initCursorBeforeRaumerShot_iiiii
       jsr ?calcCursorBeforeRaumerShot
 
       LDY #5
@@ -367,7 +367,7 @@
 ;  x
 ; x x
 ; immer diese Positionen pruefen, sonst koennen wir bei Highspeed
-; evtl. 2 Felder breite Haeuser �berfliegen
+; evtl. 2 Felder breite Haeuser ueberfliegen
 ;      CMP #255
 ;      BEQ ?NO_ADD_TO_XPOSITION
 

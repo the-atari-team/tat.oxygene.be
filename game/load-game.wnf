@@ -4,7 +4,7 @@
 // Game loader
 
 program loadgame
-lomem=$ad00
+lomem=$AB00, runad
 
 word filename
 word buffer
@@ -79,7 +79,7 @@ end
 
 
 
-byte chbas = 756   // High address of font
+byte chbas = @   // High address of font
 word start
 
 procedure copyFont()
@@ -95,7 +95,7 @@ procedure init()
 begin
   @initCurrentDisk()
   wait := 1
-  buffer := $A800
+  buffer := $A700 // Startadresse - 1024 ($AB00 - $400)
 
   @INIT_SIMPLE_64K()
   copyFont()
@@ -169,5 +169,3 @@ include 'BINLOAD.INC'
 include 'COMPARE.INC'
 include 'SIMPLE-64K.INC'
 
-// Hack to initialise this program
-include 'STARTAD00.INC'

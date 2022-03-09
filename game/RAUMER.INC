@@ -30,7 +30,7 @@
 
 ; Setze die Position des Raumer im Verhaeltnis zum Ship
 @setRaumerXPosition
-@setRaumerXPosition_I
+@setRaumerXPosition_i
       LDY #2
       LDA (@HEAP_PTR),Y ; wert holen
       TAX
@@ -67,7 +67,7 @@
 
 ; TODO: Berechnung noch nicht ganz richtig! Sterne wobbeln noch!
 
-; Berechnung f�r Sterne
+; Berechnung fuer Sterne
 
       LSR @REG+1
       ROR @REG
@@ -78,7 +78,7 @@
       AND #~00000011
       EOR #3
       TAX
-;      LDX @SHIP_HSCROL ; dieses Register nicht nutzen, flackert dann f�rchterlich
+;      LDX @SHIP_HSCROL ; dieses Register nicht nutzen, flackert dann fuerchterlich
 
       LDA ?STAR,X
       STA MEMORY_OXYGENE_FONT+3+124*8 ; wir poken diesen Wert in den Zeichensatz hinein

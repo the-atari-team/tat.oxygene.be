@@ -16,7 +16,11 @@
 @printff_ii
 @printff_iii
 @printff_iiii
+@printff_iiiii
+@printff_iiiiii
 @printff_iiiiiii
+@printff_iiiiiiii
+
  LDY #'F
  STY @PRINTF_TYPE
 
@@ -39,6 +43,42 @@
  JMP ?PRINTF_EDITOR_OUTPUT
  .ENDIF
 
+  .IF .DEF @STRING_OUT
+; Einfachere Version von @printf('F', ...
+@strprintf
+@strprintf_ii
+@strprintf_iii
+@strprintf_iiii
+@strprintf_iiiii
+@strprintf_iiiiii
+@strprintf_iiiiiii
+@strprintf_iiiiiiii
+
+ LDY #'S
+ STY @PRINTF_TYPE
+
+ LDY #1            ; erster Parameter, Adresse des Strings
+ LDA (@HEAP_PTR),Y ; low Wert holen
+ STA @REG+6
+ INY
+ LDA (@HEAP_PTR),Y ; high Wert holen
+ STA @REG+7
+
+ LDY #4            ; zweiter Parameter, Adresse des Arrays
+ STY ?CURRENT_HEAP ; wir muessen uns den Heap merken, da wir auf die naechsten Werte zugreifen wollen
+ LDA (@HEAP_PTR),Y ; high Wert holen
+ TAX
+ DEY               ;
+ LDA (@HEAP_PTR),Y ; low Wert holen
+ TAY
+
+ JSR ?PRINTF_EDITOR_OUTPUT
+
+ LDA #255
+ JMP @STRING_OUT
+  .ENDIF
+
+
 ?PRINTFF_COLOR = @REG+8
 
 ; Einfache Implementierung eines printf wie wir es von C gewohnt sind
@@ -48,8 +88,8 @@
 ; %d - Zahl mit Vorzeichen -32768 - 32767
 ; %D - Zahl ohne Vorzeichen 0 - 65535
 ; %c - Character
-; %x - Zahl als 2 Zeichen Hexadezimalwert 0-255
-; %X - Zahl als 4 Zeichen Hexadezimalwert 0-65535
+; %x - Zahl als 2 Zeichen Hexadezimalwert 0-255 ohne f?hrendes $
+; %X - Zahl als 4 Zeichen Hexadezimalwert 0-65535 ohne f?hrendes $
 ; %% - Prozent ausgeben
 ; \n - Return ausgeben
 ; \\ - Backslash ausgeben
@@ -57,6 +97,15 @@
 ; WICHTIG: Wenn der erste Wert kleiner als 255 ist, also X==0 dann als Kanal interpretieren
 
 @printf
+@printf_i
+@printf_ii
+@printf_iii
+@printf_iiii
+@printf_iiiii
+@printf_iiiiii
+@printf_iiiiiii
+@printf_iiiiiiii
+
  LDY #2            ; erster Parameter, Adresse des Arrays
  STY ?CURRENT_HEAP ; wir muessen uns den Heap merken, da wir auf die naechsten Werte zugreifen wollen
  LDA (@HEAP_PTR),Y ; high Wert holen
@@ -110,7 +159,9 @@
  BEQ ?PERCENT_FOUND
 
 ?PRINTF_OUTPUT        ; Zeichen einfach ausgeben
+; ORA ?PRINTFF_COLOR
  JSR @SCROUT
+
  STY ?ERROR_CODE
  CPY #127
  BCS ?ERROR_OCCURED
@@ -179,7 +230,7 @@
 ?PRINTF_NO_0
  JMP ?PRINTF_OUTPUT ; kein 'n' somit erstmal ausgeben, TODO: Hier weitere Zeichen, tabulator?
 
-; we found a '%' in the String
+; we found a '%' in the String ------------------------
 ?PERCENT_FOUND
  LDA (@REG+2),Y
  INY

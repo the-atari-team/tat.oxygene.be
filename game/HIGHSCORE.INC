@@ -104,7 +104,7 @@
 
 
 ; Resttime gibt die Zeit in sec an, die noch verblieben
-; da wir diese addieren m�chten, als bcd halten
+; da wir diese addieren moechten, als bcd halten
 ?RESTTIME
  .byte 0
 

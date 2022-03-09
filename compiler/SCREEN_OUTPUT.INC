@@ -35,9 +35,10 @@
 ; write ln() ist ausgebaut, @printf() verwenden!
 ; @PRINT_STRING gibt String aus, dieser beginnt sofort hinter dem JSR @PRINT_STRING und endet mit $FF
 ; @EOLOUT       gibt ein Atari-Return aus
-; @DECOUT       gibt eine Zahl nicht vorzeichenbehaftet aus
+; @DECOUT       gibt eine Zahl nicht vorzeichenbehaftet aus (x*256+y)
+; @SCROUT       gibt ein Zeichen aus (aus Akku)
 
-
+?PRINTFF_COLOR = @REG+8
 
 ; ----------------------------------------------------
 ; Hier nur Routinen, die Dinge auf dem Screen ausgeben
@@ -56,6 +57,8 @@
 ; endet mit $FF
 
 @PRINT_STRING
+      LDX #0
+      STX ?PRINTFF_COLOR
       PLA
       STA @AUX
       PLA
@@ -73,11 +76,16 @@
 ; ----------------------------------------------------
 ; Cursor in neue Zeile (enter)
 @EOLOUT
+      lda #0
+      sta ?printff_color
       LDA #$9B  ;EOL ausgeben
       BNE @SCROUT
 
 ; @PRINTCHAR für Ausgabe eines Zeichens, nutzt die Funktion @SCROUT
 @PRINTCHAR
+@PRINTCHAR_I
+     ldx #0
+     stx ?printff_color
      LDY #1
      LDA (@HEAP_PTR),Y
 
@@ -100,7 +108,21 @@
  .ENDIF
 ?NO_FASTSCREEN_OUT
 
+ .IF .DEF @STRING_OUT
+      CMP #'S
+      BNE ?NO_STRING_OUT
+
+      TYA
+      JMP @STRING_OUT
+ .ENDIF
+?NO_STRING_OUT
+
+
 ?EDITOR_OUT
+      tya
+      ORA ?PRINTFF_COLOR
+      tay
+
       LDA EDITRV+7
       PHA
       LDA EDITRV+6
@@ -109,6 +131,10 @@
       RTS
 
 ?SCREEN_OUT
+      tya
+      ORA ?PRINTFF_COLOR
+      tay
+
       LDA SCRENV+7
       PHA
       LDA SCRENV+6
@@ -131,7 +157,12 @@
 ; ----------------------------------------------------
 ; Ausgabe eines Strings per Parameter
 @PRINTSTRING
+@PRINTSTRING_I
+      LDX #0
+      STX ?PRINTFF_COLOR
+
       LDY #2
+@_PRINTSTRING_NEED_YREG
       LDA (@HEAP_PTR),Y ; wert holen
       TAX
       DEY
@@ -148,6 +179,7 @@
       LDA (@AUX,X)
       CMP #$FF
       BEQ ?PREXIT2
+
       JSR @SCROUT
       WINC  @AUX
       LDX #0
@@ -160,6 +192,10 @@
 ; @PRINTHEX2 um 2 HEX-Zahlen auszugeben
 ; '$' muss per @PRINTCHAR(36) ausgegeben werden
 @PRINTHEX2
+@PRINTHEX2_I
+      ldx #0
+      stx ?printff_color
+
       LDY #1
       LDA (@HEAP_PTR),Y ; Wert holen
       JMP @PRINTHEX
@@ -171,6 +207,10 @@
 ; @PRINTHEX4 um 4 HEX-Zahlen auszugeben (word oder byte)
 ; '$' muss per @PRINTCHAR(36) ausgegeben werden
 @PRINTHEX4
+@PRINTHEX4_I
+      ldx #0
+      stx ?printff_color
+
       LDY #2
       LDA (@HEAP_PTR),Y ; Wert holen
       TAX
@@ -198,20 +238,46 @@
       LSR A
       LSR A
       TAX
-      LDA ?ASCIIHEX,X
+      LDA @ASCIIHEX,X
       JSR @SCROUT
       PLA
       AND #$0F
       TAX
-      LDA ?ASCIIHEX,X
+      LDA @ASCIIHEX,X
       JMP @SCROUT
 
-?ASCIIHEX
-      .BYTE '0,'1,'2,'3,'4,'5,'6,'7,'8,'9,'A,'B,'C,'D,'E,'F
+@ASCIIHEX
+      .BYTE '0,'1,'2,'3,'4,'5,'6,'7,'8,'9,'A,'B,'C,'D,'E,'F,$FF
+
+; @asciihexToInt(hex as string)
+; @return position in the hex array, is also the hex value
+@ASCIIHEXTOINT
+@ASCIIHEXTOINT_I
+    LDY #1
+    LDA (@HEAP_PTR),Y ; wert holen
+    ldx #0
+    ldy #0
+?asciihex_loop
+    cmp @ASCIIHEX,y
+    beq ?hex_found
+    cmp #255
+    beq ?hex_not_found
+    iny
+    bne ?asciihex_loop
+
+?hex_not_found
+    ldy #0
+
+?hex_found
+    rts
 
 ; ----------------------------------------------------
 ; Decimalzahl nicht vorzeichenbehaftet ausgeben (-1 => 65535)
 @PRINTDIGITS
+@PRINTDIGITS_I
+    ldx #0
+    stx ?printff_color
+
     LDY #2
     LDA (@HEAP_PTR),Y ; wert holen
     TAX
@@ -224,6 +290,10 @@
 ; ----------------------------------------------------
 ; Vorzeichenbehaftete Decimalzahl ausgeben (-32768 bis 32767)
 @PRINTVALUE
+@PRINTVALUE_I
+      ldx #0
+      stx ?printff_color
+
       LDY #2
       LDA (@HEAP_PTR),Y ; wert holen
       TAX
@@ -355,15 +425,28 @@
 
 ; @POSITION(x,y) oder @gotoxy(x,y) um Cursor zu positionieren
 @gotoxy
+@gotoxy_ii
 @Position
-      LDY #2
+@Position_ii
+      LDY #1
       LDA (@HEAP_PTR),Y ; wert holen
-      STA 86
-      DEY
+      STA COLCRS
+      INY
       LDA (@HEAP_PTR),Y
-      STA 85
+      STA COLCRS+1
 
-      LDY #3
+      INY
       LDA (@HEAP_PTR),Y ; wert holen
-      STA 84
+      STA ROWCRS
+      RTS
+
+; position the cursor only in horizonal position
+@gotox
+@gotox_i
+      LDY #1
+      LDA (@HEAP_PTR),Y ; wert holen
+      STA COLCRS
+      INY
+      LDA (@HEAP_PTR),Y
+      STA COLCRS+1
       RTS

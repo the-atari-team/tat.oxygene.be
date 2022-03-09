@@ -8,10 +8,13 @@
 ;
 
 ; liefert aktuellen Wert zum Feuerknopf
+;
+; if @strig(0) == 0 then gedrueckt
+;
 ; 0=gedrueckt
 ; 1=nicht gedrueckt
 @STRIG
-@STRIG_I
+@STRIG_i
   LDY #1
   LDA (@HEAP_PTR),Y ; der 1. Parameter
   AND #~00000001 ; max 2 Strig
@@ -24,8 +27,14 @@
 
 ; liefert den originalen Stick Wert, kann nur mit 2 Sticks arbeiten (Atari XL)
 ; 15=nicht bewegt und jedes Bit fuer entsprechende Richtung
+;
+; if @stick(0) == 14 then oben gedrueckt
+; if @stick(0) == 11 then rechts gedrueckt
+; if @stick(0) == 7 then links gedrueckt
+; if @stick(0) == 13 then unten gedrueckt
+;
 @STICK
-@STICK_I
+@STICK_i
   LDY #1
   LDA (@HEAP_PTR),Y ; der 1. Parameter
   AND #~00000001 ; max 2 Sticks
@@ -37,8 +46,11 @@
   RTS
 
 ; liefert 1, wenn Stick(n) nach oben gedrueckt wird
+;
+; if @stickup(0) == 1 then oben gedrueckt
+;
 @STICKUP
-@STICKUP_I
+@STICKUP_i
   JSR @STICK
   TYA
   AND #~0001
@@ -55,8 +67,11 @@
   RTS
 
 ; liefert 1, wenn Stick(n) nach unten gedrueckt wird
+;
+; if @stickdown(0) == 1 then unten gedrueckt
+;
 @STICKDOWN
-@STICKDOWN_I
+@STICKDOWN_i
   JSR @STICK
   TYA
   AND #~0010
@@ -64,8 +79,11 @@
   BNE ?STICK_NOT_MOVED
 
 ; liefert 1, wenn Stick(n) nach links gedrueckt wird
+;
+; if @stickleft(0) == 1 then left gedrueckt
+;
 @STICKLEFT
-@STICKLEFT_I
+@STICKLEFT_i
   JSR @STICK
   TYA
   AND #~0100
@@ -73,8 +91,11 @@
   BNE ?STICK_NOT_MOVED
 
 ; liefert 1, wenn Stick(n) nach rechts gedrueckt wird
+;
+; if @stickright(0) == 1 then rechts gedrueckt
+;
 @STICKRIGHT
-@STICKRIGHT_I
+@STICKRIGHT_i
   JSR @STICK
   TYA
   AND #~1000

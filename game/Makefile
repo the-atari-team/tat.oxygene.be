@@ -129,15 +129,17 @@ HATEFACT.INC: hatefactor.wnf RAUMER-STRUCT.INC
 	$(CC) $< -O 2
 
 OXYGENBE.65o: test-player-missile.wnf $(ALL_INCLUDES)
-	$(CC) $< -O 2 -I ../compiler
+	$(CC) $< -O 2 -smallHeapPtr -I ../compiler
 	$(ASM) $(@:.65o=.ASM) >/dev/null
+#	$(ASM) -ha -s $(@:.65o=.ASM) -g$(@:.65o=.lst) -l$(@:.65o=.lab) >$(@:.65o=.log)
 
 #
 # Boot-loader
 #
-LOADGAME.65o: load-game.wnf
-	$(CC) $< -O 2 -I ../compiler
+LOADGAME.65o: load-game.wnf BINLOAD.INC
+	$(CC) $< -O 2 -smallHeapPtr -I ../compiler
 	$(ASM) $(@:.65o=.ASM) >/dev/null
+#	$(ASM) -ha -s $(@:.65o=.ASM) -g$(@:.65o=.lst) -l$(@:.65o=.lab) >$(@:.65o=.log)
 
 BINLOAD.INC: binload.wnf
 	$(CC) $< -O 2

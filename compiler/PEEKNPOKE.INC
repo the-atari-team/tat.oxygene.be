@@ -13,12 +13,17 @@
 ; hintergrundfarbe:=10          // setzt die hintergrundfarbe
 ; irgendwas := hintergrundfarbe // weisst den Inhalt der Hintergrundfarbe zu
 ;
-; Deshalb sind das hier eigentlich voellig unnoetige Routinen und nur der Vollstaendigkeit halber da
+; Deshalb sind @peek(addr) & @poke(addr, value) hier eigentlich
+; voellig unnoetige Routinen und nur der Vollstaendigkeit halber da
+; wir brauchen diese, da wir sonst nicht mit einenem Namen an den Wert kommen
+; ein &NAME gibt es halt noch nicht im Compiler
 
 ; Hole ein Byte aus dem Speicher, wie in Basic
 ; .IF .REF @PEEK
 @PEEK
-@peek_i
+@PEEK_I
+@GETBYTE
+@GETBYTE_I
  LDY #2
  LDA (@HEAP_PTR),Y ; high Wert holen
  STA @REG+1
@@ -27,24 +32,31 @@
  STA @REG
 
 ; get Value out of memory
- LDY #0
+; LDY #0
+ DEY
  LDA (@REG),Y
  TAY
  LDX #0
  RTS
 ; .ENDIF
 
+; set a byte into memory
+; @poke(address, byte)
+; @setbyte(address, byte) is like @setbytearray(address,0,byte)
 @POKE
 @POKE_II
- LDY #2
+@SETBYTE
+@SETBYTE_II
+ LDY #1
  LDA (@HEAP_PTR),Y ; high Wert holen
- STA @REG+1
- DEY
- LDA (@HEAP_PTR),Y ; low Wert holen
  STA @REG
+ INY
+ LDA (@HEAP_PTR),Y ; low Wert holen
+ STA @REG+1
 
 ; get Value out of memory
- LDY #3
+; LDY #3
+ INY
  LDA (@HEAP_PTR),Y
 
  LDY #0
@@ -52,20 +64,28 @@
  RTS
 
 
-; Hole ein Byte aus dem Speicher, wie in Basic
+; Hole ein Word aus dem Speicher, wie in Basic
+; value := @dpeek(addr) // ist in C value = *addr
+
 ;  .IF .REF @DPEEK
+@ADDRESS               ; little bit more clear in word
+@ADDRESS_I
+@GETWORD
+@GETWORD_I
 @DPEEK
- LDY #2
+@DPEEK_I
+ LDY #1
  LDA (@HEAP_PTR),Y ; high Wert holen
- STA @REG+1
- DEY
- LDA (@HEAP_PTR),Y ; low Wert holen
  STA @REG
+ INY
+ LDA (@HEAP_PTR),Y ; low Wert holen
+ STA @REG+1
 
 ;(x*256+y)
 
 ; get Value out of memory
- LDY #1
+; LDY #1
+ DEY
  LDA (@REG),Y
  TAX
  DEY

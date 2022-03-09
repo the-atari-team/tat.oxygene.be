@@ -44,7 +44,7 @@
 ; to the position at INIT_RUNTIME time. The RTS takes the jump
 ; back to Basic
 @EXIT
-@EXIT_I
+@EXIT_i
       LDY #1
       LDA (@HEAP_PTR),Y ; Wert holen
       STA BININT
@@ -53,7 +53,7 @@
       STA BININT+1
 
  .IF .DEF @INIT_BREAKKEY
-  jsr @RESTORE_BREAKKEY
+      jsr @RESTORE_BREAKKEY
  .ENDIF
 
       LDX ?STACKPOINTER
@@ -74,14 +74,23 @@
 ;  RTS
 
 ; SMC-Code!
-;  STY ?ADDRESS+1
-;  STX ?ADDRESS+2
+;  STY ?ADDRESS+1   ; 4
+;  STX ?ADDRESS+2   ; 4
 ;?ADDRESS
-;  JMP $4000
+;  JMP $4000        ; 3
 
- STY @FKT_PTR
- STX @FKT_PTR+1
- JMP (@FKT_PTR)
+; need 2 bytes in Zero page
+; STY @FKT_PTR      ; 3
+; STX @FKT_PTR+1    ; 3
+; JMP (@FKT_PTR)    ; 5
+
+; need 3 cycles more, but no extra memory
+  TXA ; 2
+  PHA ; 3
+  TYA ; 2
+  PHA ; 3
+  PHP ; 3 ; RTI expect
+  RTI ; 6
 
 ; Hilfsroutine um an die Asserts zu kommen, die jeder fehlerhafte @Assert(condition) erzeugt.
 @GETASSERTS
@@ -89,6 +98,14 @@
     LDX @ASSERT_FEHLER+1
     RTS
 
+ .IF .DEF @PRINT_STRING
+
+@ASSERT_ERROR_PREFIX
+ JSR @PRINT_STRING
+ .BYTE "## ERROR: ",255
+ RTS
+
+ .ENDIF
 
 ; sub akku from heap_ptr
 @SUB_FROM_HEAP_PTR
@@ -123,13 +140,18 @@
 
      LDA #<@HEAP_MEMORY
      STA @HEAP_PTR
-     LDA #>@HEAP_MEMORY
-     STA @HEAP_PTR+1
+     LDX #>@HEAP_MEMORY
+     STX @HEAP_PTR+1
 
+; we set the APPMHI 256bytes after heap ptr
+     STA APPMHI
+     INX
+     STX APPMHI+1
+
+; if BREAKKEY.INC is included, we have such function and can call it.
  .IF .DEF @INIT_BREAKKEY
-  jsr @INIT_BREAKKEY
+     jsr @INIT_BREAKKEY
  .ENDIF
-
 
 ; TODO: I don't know, if this is good idea hear
      LDA #0
@@ -161,6 +183,9 @@
 ; Here starts the Heap-Memory.
      .BYTE "HEAP"
 
+; We must set heap_ptr start to a word equal address.
+  * = (* +$FF) & $FF00
+
 @PARAMETERCOUNT
 @HEAP_MEMORY
     .byte 0
@@ -168,6 +193,7 @@
 ; @parameter starts one! byte after heap_memory, because from Atari-basic
 ; the first byte always contains the count of following parameters.
 @PARAMETER
+    .DS $00fb
     .BYTE $de,$ad,$be,$ef
 
 ; Here must not stay anything.

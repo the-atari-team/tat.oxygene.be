@@ -520,7 +520,7 @@ end
 
 
 
-word optionposition
+word optionposition=131
 
 procedure @initMenu()
 begin

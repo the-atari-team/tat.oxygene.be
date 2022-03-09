@@ -13,6 +13,16 @@
 W
     .ENDM
 
+    .macro move.b
+    lda %1
+    sta %2
+    .endm
+
+    .macro move.w
+    move.b %1,%2
+    move.b %1+1,%2+1
+    .endm
+
 ; decrement a word value by one
     .MACRO WDEC
       LDA %1+0       ;Test if the LSB is zero
@@ -21,7 +31,8 @@ W
 SKIP  DEC %1+0       ;Decrement the LSB
     .ENDM
 
-
+; @deprecated
+; wir coden das jetzt selbst
 ; Folgendes Macro wird verwendet um den Heap_Ptr zu erhoehen,
 ; wenn Proceduren mit Parametern aufgerufen werden.
 ; 11 Bytes (statt 6 Bytes (2+3+1) (lda #, jsr x, rts))
@@ -39,6 +50,8 @@ NO_INC_HIGH_HEAP_PTR
     .ENDM
 
 
+; @deprecated
+; wir coden das jetzt selbst
 ; Folgendes Macro wird verwendet um den Heap_Ptr zu erniedrigen,
 ; wenn Proceduren mit Parametern aufgerufen wurden.
 ; 11 Bytes (statt 6 Bytes (2+3+1) (lda #1, jsr x, rts))
@@ -85,7 +98,7 @@ NO_DEC_HIGH_HEAP_PTR
       LDY #0          ; 2
       LDA (@GETARRAY),Y ; 6
 ; lda (@getarray),y may be faster, but we need to clear X-Register also
-;      LDX #0          ; 2
+      LDX #0          ; 2
 ;      LDA (@GETARRAY,X) ; 6
 ; TODO: TAY hier entfernen und aussen machen!
 ;      TAY             ; 2

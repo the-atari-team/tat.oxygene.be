@@ -7,17 +7,17 @@
      .LOCAL
 
 ; Die hier angegebenen IO Routinen nutzen das Atari OS um Daten zu lesen/schreiben.
-; erste Handlung ist immer einen CHANNEL zu öffnen (@open...)
+; erste Handlung ist immer einen CANAL zu öffnen (@open...)
 ; Daten zu schreiben oder zu lesen
-; CHANNEL zu schließen mit (@close )
+; CANAL zu schließen mit (@close )
 
 
-; öffnet einen CHANNEL zum lesen(4), schreiben(8), anhängen(12), ...
-; Usage: @open(CHANNEL, 4|6|8|12,0,adr:filename)
-; @return mit Fehler 129, sollte der CHANNEL schon offen sein
+; öffnet einen CANAL zum lesen(4), schreiben(8), anhängen(12), ...
+; Usage: @open(CANAL, 4|6|8|12,0,adr:filename)
+; @return mit Fehler 129, sollte der CANAL schon offen sein
 @OPEN
-@OPEN_iiii
-      JSR ?GET_CHANNEL
+@OPEN_IIII
+      JSR ?GET_CANAL
 
       LDY #3
       LDA (@HEAP_PTR),Y ; der 2. Parameter von open (4,8) Read/Write/Append
@@ -63,10 +63,12 @@
       RTS
 
 ; Schliesst den angegebenen Kanal 0-6 moeglich 1-5 eher zu nutzen
-; Usage: @close(CHANNEL)
+; Kanal 0 ist fuer den Editor immer offen
+; Kanal 6 ist fuer Graphics, immer geschlossen, trotzdem nutzbar
+; Usage: @close(CANAL)
 @CLOSE
-@CLOSE_i
-      JSR ?GET_CHANNEL
+@CLOSE_I
+      JSR ?GET_CANAL
 
      LDA #12 ; close
      STA ICCOM,X
@@ -76,23 +78,13 @@
      LDX #0
      RTS
 
-; Holt exact ein Byte (Zeichen) über einen offenen CHANNEL und gibt dieses zurueck,
+; Holt exakt ein Byte (Zeichen) über einen offenen CANAL und gibt dieses zurueck,
 ; Zeichen >256, Fehler aufgetreten
-; Usage: value := @get(CHANNEL)
+; Usage: value := @get(CANAL)
 @GET
 @GET_I
-      JSR ?GET_CHANNEL
-
-      LDA #7 ; Get Characters
-      STA ICCOM,X
-
-      LDA #0
-      STA ICBLEN+1,X
-      STA ICBLEN,X
-      JSR CIOV
-
-      CPY #127
-      BCS ?GET_ERROR
+      JSR ?GET_CANAL
+      jsr ?get_single_byte
 
       TAY
       LDX #0
@@ -105,24 +97,51 @@
       LDY #0
       RTS
 
-; Liest vom offenen CHANNEL eine angegebene Länge von Bytes
+; Holt exakt zwei Byte (Zeichen) über einen offenen CANAL und gibt diese zurueck,
+; Usage: value := @getw(CANAL)
+@GETW
+@GETW_I
+      JSR ?GET_CANAL
+      jsr ?get_single_byte ; low byte
+      STA @REG
+
+      jsr ?get_single_byte ; high byte
+      TAX
+      LDY @REG
+      RTS
+
+?get_single_byte
+      LDA #7 ; Get Characters
+      STA ICCOM,X
+
+      LDA #0
+      STA ICBLEN+1,X
+      STA ICBLEN,X
+      JSR CIOV
+
+      CPY #127
+      BCS ?GET_ERROR
+
+      RTS
+
+; Liest vom offenen CANAL eine angegebene Länge von Bytes
 ; und schreibt diese direkt in den Speicher ab der angegebene Adresse
 ; Usage: @bget(kanal, adresse, laenge)
 @BGET
-@BGET_iii
-      JSR ?GET_CHANNEL
+@BGET_III
+      JSR ?GET_CANAL
 
       LDA #7 ; Get Characters
       STA ICCOM,X
 
       JMP ?BGETBPUT
 
-; Schreibt Daten in einen offenen CHANNEL
+; Schreibt Daten in einen offenen CANAL
 ; schreibt eine angegebene Länge von Bytes ab der angegebenen Adresse
 ; Usage: @bput(kanal, adresse, laenge)
 @BPUT
-@BPUT_iii
-      JSR ?GET_CHANNEL
+@BPUT_III
+      JSR ?GET_CANAL
 
       LDA #11 ; Put Characters
       STA ICCOM,X
@@ -167,24 +186,33 @@
   LDX #0
   RTS
 
-; TODO: @PUT
-; schreibt exact ein Byte in den offenen CHANNEL
-@PUT
-@PUT_ii
-      JSR ?GET_CHANNEL
+@PUTW
+@PUTW_II
+  jsr ?get_canal
 
-      LDA #11       ;Befehl 'Put Characters'
-      STA ICCOM,X   ;in IOCB eintragen
-      LDA #0        ;nur einen Wert schreiben
-      STA ICBLEN,X  ;daher Bufferlange:=0
-      STA ICBLEN+1,X
+  ldy #3
+  lda (@HEAP_PTR),y
+
+  jsr ?put
+
+  ldy #4
+  lda (@HEAP_PTR),y
+
+  jsr ?put
+  jmp ?put_exit
+
+; TODO: @PUT
+; schreibt exact ein Byte in den offenen CANAL
+ @PUT
+ @PUT_II
+      JSR ?GET_CANAL
 
 ; Byte holen, das geschrieben werden soll
-      LDY #3
-      LDA (@HEAP_PTR),Y
+      ldy #3
+      lda (@HEAP_PTR),y
 
-      JSR CIOV      ;und ablegen...
-
+      jsr ?put
+?put_exit
       CPY#0         ;Fehler? (s. Text!)
       BMI ?PUT_ERROR ;ja, zur Fehlerroutine
 
@@ -194,8 +222,30 @@
      LDX #0
      RTS
 
+?put
+      pha
+      LDA #11       ;Befehl 'Put Characters'
+      STA ICCOM,X   ;in IOCB eintragen
+      LDA #0        ;nur einen Wert schreiben
+      STA ICBLEN,X  ;daher Bufferlange:=0
+      STA ICBLEN+1,X
+      pla
+
+      JMP CIOV      ;und ablegen...
+
+; liefert den aktuellen Status des uebergebenen Kanals
+;
+@STATUS
+@STATUS_I
+  jsr ?get_canal
+
+  lda ICSTA,X
+  tay
+  ldx #0
+  rts
+
 ; interne Hilfsroutine um an den ersten Parameter zu kommen
-?GET_CHANNEL
+?GET_CANAL
       LDY #1
       LDA (@HEAP_PTR),Y ; Kanal
       ASL

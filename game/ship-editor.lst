@@ -685,7 +685,7 @@ REM Start copy buffer
     if key=asc("L") then exec load
     if key=asc("S") then exec store
     if key=asc("O") then exec loadbookmark
-    if key=asc("P") then exec storebookmark
+    if key=asc("W") then exec storebookmark
 
     if key=asc("Q") :REM Mark endless
       n = peek($9a00)
@@ -1259,6 +1259,7 @@ proc drawblock
     x1=x1+width
   endif
 endproc
+
 
 
 !run
