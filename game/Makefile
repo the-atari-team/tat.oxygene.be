@@ -88,6 +88,7 @@ clean::
 	rm -f *.COM *.ASM .insert.txt
 	rm -f SHIP*.DAT
 	rm -f editor.atr
+	rm -rf /tmp/atari
 
 clean::
 	rm -f $(EDITOR_BUILD_FILES)
