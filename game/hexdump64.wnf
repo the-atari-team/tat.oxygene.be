@@ -1,4 +1,4 @@
-// cdw by 'The Atari Team' 2020
+// cdw by "The Atari Team" 2020
 // licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
 
 // Ein Hexdump
@@ -33,17 +33,17 @@ byte CRSINH=752 // Wert ungleich 0 und der Cursor ist unsichtbar
 
 procedure printline(address)
 begin
-  @printff('%X  ', address)
+  @printff("%X  ", address)
   for x:=0 to 7 do
   begin
-    @printff('%x ', @peek(address + x))
+    @printff("%x ", @peek(address + x))
   end
 
   for x:=0 to 7 do
   begin
     c:=@peek(address + x)
     if c == $9B then c := ' '
-    @printff('%c', c)
+    @printff("%c", c)
   end
 end
 
@@ -133,7 +133,7 @@ begin
   osrom := 0
 
   @fast_gotoxy(0,0)
-  @printff('Simpler Hexdumper        (c) 2020 by TAT')
+  @printff("Simpler Hexdumper        (c) 2020 by TAT")
 
   lines := 22
   bytes := lines * 8
@@ -152,13 +152,13 @@ begin
       if osrom == 1 then
       begin
         @fast_gotoxy(18, 0)
-        @printff('OS-ROM')
+        @printff("OS-ROM")
         @ACTIVATE_ROM()
       end
       else
       begin
         @fast_gotoxy(18, 0)
-        @printff('OS-RAM')
+        @printff("OS-RAM")
         @ACTIVATE_RAM()
       end
 
@@ -181,7 +181,7 @@ begin
 
       if key == 'L' then
       begin
-        @binload('D:SHIP1.COM', $9000)
+        @binload("D:SHIP1.COM", $9000)
         key := 0
       end
 
@@ -198,21 +198,21 @@ begin
   @exit(0)
 end
 
-include 'FAST_SCREEN_OUTPUT.INC'
-include 'SCREEN_OUTPUT.INC'
-include 'PRINTF.INC'
+include "FAST_SCREEN_OUTPUT.INC"
+include "SCREEN_OUTPUT.INC"
+include "PRINTF.INC"
 
-include 'PEEKNPOKE.INC'
-include 'BACKCOLORLINE.INC'
+include "PEEKNPOKE.INC"
+include "BACKCOLORLINE.INC"
 
-include 'GETCHAR.INC'
-include 'BASIC.INC'
+include "GETCHAR.INC"
+include "BASIC.INC"
 
-include 'IO.INC'
-include 'COMPARE.INC'
-// include 'MATH.INC'
-include 'START4000.INC'
-include 'SIMPLE-64K.INC'
-include 'BINLOAD.INC'
+include "IO.INC"
+include "COMPARE.INC"
+// include "MATH.INC"
+include "START4000.INC"
+include "SIMPLE-64K.INC"
+include "BINLOAD.INC"
 
 // RUNTIME.INC wird immer automatisch angehaengt

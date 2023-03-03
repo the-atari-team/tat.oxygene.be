@@ -1,4 +1,4 @@
-// cdw by 'The Atari Team' 2020
+// cdw by "The Atari Team" 2020
 // licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
 
 INCLUDE SH:SHIELD
@@ -45,12 +45,12 @@ byte shieldDecreaser = @SHIELD_DECREASER
 byte shieldDecreaseWait
 
 byte array raumerShield[1] = $Fad8
-byte array raumerShield1[1] = ['BCDEFGHIJKL']       // 2*11 = 22
-byte array raumerShield2[1] = ['BBCDDEFFGHHIJJKLL'] // 2*17 = 34
-byte array raumerShield3[1] = ['BBCCDDEEFFGGHHIIJJKKLL'] // 2*22 = 44
-byte array raumerShield4[1] = ['BBBCCDDDEEFFFGGHHHIIJJJKKLLL'] // 2*28 = 56
-byte array raumerShield5[1] = ['BBBCCCDDDEEEFFFGGGHHHIIIJJJKKKLLL'] // 2*33 = 66
-//byte array raumerShield6[1] = ['BCDEFGHIJKLAMNOPQRSTUVW']
+byte array raumerShield1[1] = ["BCDEFGHIJKL"]       // 2*11 = 22
+byte array raumerShield2[1] = ["BBCDDEFFGHHIJJKLL"] // 2*17 = 34
+byte array raumerShield3[1] = ["BBCCDDEEFFGGHHIIJJKKLL"] // 2*22 = 44
+byte array raumerShield4[1] = ["BBBCCDDDEEFFFGGHHHIIJJJKKLLL"] // 2*28 = 56
+byte array raumerShield5[1] = ["BBBCCCDDDEEEFFFGGGHHHIIIJJJKKKLLL"] // 2*33 = 66
+//byte array raumerShield6[1] = ["BCDEFGHIJKLAMNOPQRSTUVW"]
 
 word array raumerShields[7] = [
 0,

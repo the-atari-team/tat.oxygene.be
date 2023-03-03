@@ -1,4 +1,4 @@
-// cdw by 'The Atari Team' 2020
+// cdw by "The Atari Team" 2020
 // licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
 
 program oxygenbe
@@ -16,7 +16,7 @@ program oxygenbe
 
 // This is OXYGENE BE (part #2)
 
-// by 'The Atari Team'
+// by "The Atari Team"
 // (c) 1987 - 2020
 // rewritten from scratch
 //
@@ -161,7 +161,7 @@ byte SDMCTL = @
 
 procedure initPlayerMissile()
 begin
-//  @printf('initPlayerMissile()\n')
+//  @printf("initPlayerMissile()\n")
 
   GPRIOR:=1
 //  SDMCTL:=$3e // ~00111110 // 32+16+8+4+2
@@ -421,7 +421,7 @@ byte enemyColor = @RS_ENEMY_COLOR
 // TODO: wie aufwendig wäre es von oben und unten neue kommen zu lassen?
 procedure initEnemy()
 begin
-//  @printf('initEnemy()\n')
+//  @printf("initEnemy()\n")
 
 //  if options[5] == 0 then
 //    i := $cc // green
@@ -615,7 +615,7 @@ byte array enemyShop_speedupList[1] = [0,25,10,8,4,2,1]
 
 procedure initEnemyShot()
 begin
-//  @printf('initEnemyShot()\n')
+//  @printf("initEnemyShot()\n")
 
   if enemyShot_possible == 1 and enemyCount > 0 then
   begin
@@ -721,7 +721,7 @@ end
 
 procedure enemyShot()
 begin
-//  @printf('enemyShot()\n')
+//  @printf("enemyShot()\n")
 
   if isEnemyShot == 1 then
   begin
@@ -796,7 +796,7 @@ end
 
 procedure upDownMovementGegner()
 begin
-//  @printf('upDownMovementGegner()\n')
+//  @printf("upDownMovementGegner()\n")
 
   if enemyCount == 0 then return 0
 
@@ -1139,7 +1139,7 @@ byte raumerOverhead // 1==Raumer steht über Kopf
 // eine Animation wird nicht abgebrochen!
 procedure animationRaumer()
 begin
-//  @printf('animationRaumer()\n')
+//  @printf("animationRaumer()\n")
 
   if raumerIsInAnimation != 0 then
   begin
@@ -1240,7 +1240,7 @@ end
 
 procedure initRaumer(x, y, height)
 begin
-//  @printf('initRaumer()\n')
+//  @printf("initRaumer()\n")
   initPlayerMissile()
 
   raumerColorLight := $0f  // TODO: Farbe Raumer Rand
@@ -1292,7 +1292,7 @@ byte raumerShot_animationOffset
 
 procedure initRaumerShot()
 begin
-//  @printf('initRaumerShot()\n')
+//  @printf("initRaumerShot()\n")
   if raumerIsInExplosion == 1 then
     return 0
 
@@ -1382,7 +1382,7 @@ byte value
 
 procedure raumerShot()
 begin
-//  @printf('raumerShot()\n')
+//  @printf("raumerShot()\n")
 
   if isRaumerShot == 1 then
   begin
@@ -1438,7 +1438,7 @@ end
 // Raumer wackeln
 procedure raumerEncountered()
 begin
-//  @printf('raumerEncountered()\n')
+//  @printf("raumerEncountered()\n")
 
   if enemyShot_type < 4 then   // Der Killerschuss ist nicht aufzuhalten
   begin
@@ -1472,7 +1472,7 @@ byte enemy
 // Der Enemy wurde getroffen
 procedure enemyEncountered()
 begin
-//  @printf('enemyEncountered()\n')
+//  @printf("enemyEncountered()\n")
 
   clearRaumerShot()
 
@@ -1769,7 +1769,7 @@ byte raumerMoveSlowdown = @OPTION_RAUMERMOVE_SLOWDOWN
 
 procedure raumerMovement(key)
 begin
-//  @printf('raumerMovement()\n')
+//  @printf("raumerMovement()\n")
   if raumerIsInExplosion == 0 then
   begin
     if landing == 0 then
@@ -2283,13 +2283,13 @@ begin
 
     if SIZEP[0] & $06 != 0 then
     begin
-      // @printf('Raumer wurde getroffen\n')
+      // @printf("Raumer wurde getroffen\n")
       raumerEncountered()
     end
 
     if SIZEP[2] & $01 != 0 then
     begin
-      // @printf('Enemy wurde getroffen\n')
+      // @printf("Enemy wurde getroffen\n")
       enemyEncountered()
     end
 
@@ -2505,41 +2505,41 @@ begin
 
 end
 
-include 'MEMORY-MAP.INC'
-include 'SIMPLE-64K.INC'
-include 'FAST_SCREEN_OUTPUT.INC'
-include 'SCREEN_OUTPUT.INC'
-include 'PRINTF.INC'
-include 'MATH.INC'
-include 'MATH_SHIFT.INC'
-include 'ARRAY.INC'
-include 'GETCHAR.INC'
-include 'STICK.INC'
-include 'TIME.INC'
-include 'DOS.INC'
-include 'IO.INC'
-include 'BACKCOLORLINE.INC'
+include "MEMORY-MAP.INC"
+include "SIMPLE-64K.INC"
+include "FAST_SCREEN_OUTPUT.INC"
+include "SCREEN_OUTPUT.INC"
+include "PRINTF.INC"
+include "MATH.INC"
+include "MATH_SHIFT.INC"
+include "ARRAY.INC"
+include "GETCHAR.INC"
+include "STICK.INC"
+include "TIME.INC"
+include "DOS.INC"
+include "IO.INC"
+include "BACKCOLORLINE.INC"
 
-include 'RAUMER-STRUCT.INC'
-include 'ENEMY.INC'
-include 'RAUMER.INC'
-include 'COLLISIONS.INC'
-// include 'COLLISIONS_RED.INC'
-include 'KEYCODE.INC'
-include 'OXYGENE-AUDIO-PLAYER.INC'
-include 'GAME-STATISTICS.INC'
-include 'TAT.INC'
-// include 'MISSION.INC'
-include 'OXYGENE.INC'
-include 'HIGHSCORE.INC'
+include "RAUMER-STRUCT.INC"
+include "ENEMY.INC"
+include "RAUMER.INC"
+include "COLLISIONS.INC"
+// include "COLLISIONS_RED.INC"
+include "KEYCODE.INC"
+include "OXYGENE-AUDIO-PLAYER.INC"
+include "GAME-STATISTICS.INC"
+include "TAT.INC"
+// include "MISSION.INC"
+include "OXYGENE.INC"
+include "HIGHSCORE.INC"
 
-include 'AUDIOLST.INC'
-include 'SHIELD.INC'
-include 'HATEFACT.INC'
-include 'MENU.INC'
-include 'MENU-COLOR.INC'
-include 'BINLOAD.INC'
-include 'COMPARE.INC'
+include "AUDIOLST.INC"
+include "SHIELD.INC"
+include "HATEFACT.INC"
+include "MENU.INC"
+include "MENU-COLOR.INC"
+include "BINLOAD.INC"
+include "COMPARE.INC"
 
-include 'BASIC.INC'
+include "BASIC.INC"
 // RUNTIME.INC wird automatisch angehaengt

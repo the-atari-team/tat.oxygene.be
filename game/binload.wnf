@@ -1,4 +1,4 @@
-// cdw by 'The Atari Team' 2020
+// cdw by "The Atari Team" 2020
 // licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
 //
 // Binary Loader for 64kb
@@ -44,7 +44,7 @@ begin
 //  @init_fastscreen(screen)
 //  @INIT_SET_BYTES_PER_LINE(40)
 //  @move (screen, screen + 1, 959)
-//  @printff('\n\n')
+//  @printff("\n\n")
 
   @activate_rom()
   status := @open(kan,4,0,filename)
@@ -88,7 +88,7 @@ begin
 
             sum_readlength := sum_readlength + readlength
 
-//            @printff('s:%X r:%d l:%d\n', startaddress, bytesToRead, readlength)
+//            @printff("s:%X r:%d l:%d\n", startaddress, bytesToRead, readlength)
 
             @move(bufferAddress, startaddress, bytesToRead)      // verschiebe die Daten in den Speicher
 
@@ -104,7 +104,7 @@ begin
           @activate_rom()
           readlength := @bget(kan, startaddress, length)      // Datei einlesen
           @activate_ram()
-//          @printff('s:%X r:%d l:%d\n', startaddress, length, readlength)
+//          @printff("s:%X r:%d l:%d\n", startaddress, length, readlength)
         end
 
         if readlength != length then

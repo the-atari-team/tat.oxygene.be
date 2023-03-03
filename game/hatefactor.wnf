@@ -1,4 +1,4 @@
-// cdw by 'The Atari Team' 2020
+// cdw by "The Atari Team" 2020
 // licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
 //
 // OO    OO             OO                     OOOOOOOO                       OO
@@ -161,7 +161,7 @@ byte valuelow
 byte valuehigh
 
 byte array timeStripes[1] = [32, 62, 61, 60] // kein Strich, einer, zwei, drei Striche
-string timeLine = ['\3%%     '] // %% ist ein Uhrsymbol
+string timeLine = ["\3%%     "] // %% ist ein Uhrsymbol
 byte i,index
 
 // values von 0 - 19 werden unterstuetzt
@@ -252,7 +252,7 @@ begin
       destroyedEnemies := 0
 
     @fast_gotoxy(2,0)
-    @printff('\1#%d \2$%d  ', destroyedJets, destroyedEnemies)
+    @printff("\1#%d \2$%d  ", destroyedJets, destroyedEnemies)
 
     shoots_old := shoots
   end
@@ -264,7 +264,7 @@ begin
   if bcd_current_score1 != bcd_current_score1_old then
   begin
     @fast_gotoxy(9,0)
-    @printff('%x%x%x ', bcd_current_score3, bcd_current_score2, bcd_current_score1)
+    @printff("%x%x%x ", bcd_current_score3, bcd_current_score2, bcd_current_score1)
     bcd_current_score1_old := bcd_current_score1
   end
 
@@ -275,7 +275,7 @@ begin
 //    @fast_gotoxy(18,0)
 //    if mission_failed == 0 then
 //    begin
-//      @printff('DONE')
+//      @printff("DONE")
 //    end
 //    mission_failed_old := mission_failed
 //  end

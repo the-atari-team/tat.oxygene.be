@@ -1,4 +1,4 @@
-// cdw by 'The Atari Team' 2020
+// cdw by "The Atari Team" 2020
 // licensed under https://creativecommons.org/licenses/by-sa/2.5/[Creative Commons Licenses]
 
 INCLUDE menu:MENU
@@ -48,7 +48,7 @@ word address
 //end
 
 
-string empty = ['                    ']
+string empty = ["                    "]
 
 //
 // OO     OO
@@ -61,27 +61,27 @@ string empty = ['                    ']
 //
 
 // - ENEMY -
-string o1 =  ['   MAX QUANTITY: %d  ']
-string o2 =  ['  SHOT ACCURACY: %d  ']
-string o3 =  ['      SHOT TYPE: %d  ']
-string o4 =  ['  SHOT STRENGTH: %d  ']
-string o42 = ['     COLOR-MODE: %d  '] // 0 simple Color, 1 add, 2 random color
-string o5 =  ['          COLOR: %d  '] // 0 - 15 green, yellow, blue, red
+string o1 =  ["   MAX QUANTITY: %d  "]
+string o2 =  ["  SHOT ACCURACY: %d  "]
+string o3 =  ["      SHOT TYPE: %d  "]
+string o4 =  ["  SHOT STRENGTH: %d  "]
+string o42 = ["     COLOR-MODE: %d  "] // 0 simple Color, 1 add, 2 random color
+string o5 =  ["          COLOR: %d  "] // 0 - 15 green, yellow, blue, red
 // - SPACECRAFT -
-string o6 =  [' SHIELD STRENGH: %d  '] // none(32), poor(16), low(8), medium(4), high(2), full(0)
-string o7 =  ['ENERGY SLOWDOWN: %d  '] // no, yes, baut langsam den Schirm mit ab.
-string o8 =  ['  FIRE SLOWDOWN: %d  '] // no, yes, baut langsam den Schirm mit ab.
-string o9 =  [' SHIP COLLISION: %d  '] // 0-11
+string o6 =  [" SHIELD STRENGH: %d  "] // none(32), poor(16), low(8), medium(4), high(2), full(0)
+string o7 =  ["ENERGY SLOWDOWN: %d  "] // no, yes, baut langsam den Schirm mit ab.
+string o8 =  ["  FIRE SLOWDOWN: %d  "] // no, yes, baut langsam den Schirm mit ab.
+string o9 =  [" SHIP COLLISION: %d  "] // 0-11
 // - SHIP -
-string o10 = ['     SHIP COLOR: %d  '] // Es existiert eine Liste mit netten Farben!
-string o11 = ['SHIP NUM 2 LOAD: %d  '] // Dx:SHIP<number>.DAT, x is dynamisch
-string o12 = ['SHIELD SLOWDOWN: %d  '] // 0-11 how long it takes to decrease the shield
-string o13 = ['     SHOT SPEED: %d  '] // 1-4 how fast can we shot
-string o14 = ['HATEFACTOR MODE: %d  '] // 0-1 1 = yes
-string o15 = ['  HATE SLOWDOWN: %d  '] // 0 - 4 the higher the longer it takes to go down
-string o16 = ['      ENEMY HIT: %d  '] // 0 - 4
-string o17 = [' SPACECRAFT HIT: %d  '] // 0 - 4
-string o18 = ['SPACECRAFT SHOT: %d  '] // 0 - 4
+string o10 = ["     SHIP COLOR: %d  "] // Es existiert eine Liste mit netten Farben!
+string o11 = ["SHIP NUM 2 LOAD: %d  "] // Dx:SHIP<number>.DAT, x is dynamisch
+string o12 = ["SHIELD SLOWDOWN: %d  "] // 0-11 how long it takes to decrease the shield
+string o13 = ["     SHOT SPEED: %d  "] // 1-4 how fast can we shot
+string o14 = ["HATEFACTOR MODE: %d  "] // 0-1 1 = yes
+string o15 = ["  HATE SLOWDOWN: %d  "] // 0 - 4 the higher the longer it takes to go down
+string o16 = ["      ENEMY HIT: %d  "] // 0 - 4
+string o17 = [" SPACECRAFT HIT: %d  "] // 0 - 4
+string o18 = ["SPACECRAFT SHOT: %d  "] // 0 - 4
 word array optionsMenu[17] = [
 empty, empty,
 o1,
@@ -268,16 +268,16 @@ word array levelvalueslist[1] = [
   suicide
 ]
 
-string str_godmode =     ['GOD-MODE   ']
-string str_easypeasy =   ['EASY-PEASY ']
-string str_simple =      ['SIMPLE     ']
-string str_easy =        ['EASY       ']
-string str_practicable = ['PRACTICABLE']
-string str_provocative = ['PROVOCATIVE']
-string str_difficult =   ['DIFFICULT  ']
-string str_complicated = ['COMPLICATED']
-string str_suicide =     ['SUICIDE    ']
-string str_freestyle =   ['FREE-STYLE '] // sonderfall, use_level==0
+string str_godmode =     ["GOD-MODE   "]
+string str_easypeasy =   ["EASY-PEASY "]
+string str_simple =      ["SIMPLE     "]
+string str_easy =        ["EASY       "]
+string str_practicable = ["PRACTICABLE"]
+string str_provocative = ["PROVOCATIVE"]
+string str_difficult =   ["DIFFICULT  "]
+string str_complicated = ["COMPLICATED"]
+string str_suicide =     ["SUICIDE    "]
+string str_freestyle =   ["FREE-STYLE "] // sonderfall, use_level==0
 
 word array levelnamelist[1] = [
   str_godmode,
@@ -298,8 +298,8 @@ byte mission_level = @RS_CURRENT_MISSION
 procedure showLevelName(level_name)
 begin
   @fast_gotoxy(0,4)
-  @printff('SELECT: %s\n', level_name)
-  @printff('OPTION: MISSION +_%d ', mission_level)
+  @printff("SELECT: %s\n", level_name)
+  @printff("OPTION: MISSION +_%d ", mission_level)
 end
 
 word levelvalues
@@ -433,7 +433,7 @@ begin
   @init_fastscreen($1003)
   @fast_gotoxy(2,0)
 //  @printff(adr:empty)
-  @printff('%x%x%x   HIGH:%x%x%x',
+  @printff("%x%x%x   HIGH:%x%x%x",
   bcd_current_score3, bcd_current_score2, bcd_current_score1,
   bcd_highscore3, bcd_highscore2, bcd_highscore1)
 end
@@ -441,11 +441,11 @@ end
 procedure clearMenu()
 begin
   showHighscore()
-//  @printff('welcome')
+//  @printff("welcome")
 
   @init_fastscreen($D800) // MEMORY_SHIP
 
-  @printff('  ')
+  @printff("  ")
   @move($D800, $D801, 259) // 259 = 13 Zeilen * 20 Zeichen - 1
 
   @sleep5()
@@ -475,10 +475,10 @@ begin
   menuColorAnd := $ff
 
   @fast_gotoxy(0,0)
-  @printff(' BY THE ATARI TEAM\n  CDW 1988 - 2020\nPRESS FIRE TO START\n\n\n\n      OPTIONS')
+  @printff(" BY THE ATARI TEAM\n  CDW 1988 - 2020\nPRESS FIRE TO START\n\n\n\n      OPTIONS")
 
   @fast_gotoxy(0,9)
-  @printff('  USE CURSOR KEYS')
+  @printff("  USE CURSOR KEYS")
 
   @generateColorList(adr:menucolorlist)
 end
@@ -493,7 +493,7 @@ end
 // OOOOOOOO  OOOOOOO   OOOOOOOO  OOOOOOOO          OOOOOO  OO     OO OOOO OO
 //                                                                        OO
 
-byte array shipfile[1] = ['D1:SHIP1.COM']
+byte array shipfile[1] = ["D1:SHIP1.COM"]
 
 // TODO: wir muessen den Textscreen loeschen
 // alle Displaylistinterrupts auf das Minimum reduzieren, sonst koennte es auf original-HW nicht laufen
@@ -718,7 +718,7 @@ begin
   end
 
   @fast_gotoxy(0,12)
-  @printff('ABBUC CONTEST - 2020')
+  @printff("ABBUC CONTEST - 2020")
 
 end
 
@@ -750,8 +750,8 @@ $8f, // 11
 $92  // 12
 ]
 
-string noone = ['             NO ONE\n']
-string atleastone = ['        AT LEAST %d\n']
+string noone = ["             NO ONE\n"]
+string atleastone = ["        AT LEAST %d\n"]
 
 // jets, enemies, hits, shoots, energy, time
 byte array mission1[1] = [
@@ -892,13 +892,13 @@ begin
   @setMission(address)
 
   @fast_gotoxy(0,0)
-  @printff('  YOUR MISSION +_%d\n',mission_level)
-  @printff('  LEVEL: %s',level_name)
+  @printff("  YOUR MISSION +_%d\n",mission_level)
+  @printff("  LEVEL: %s",level_name)
   @fast_gotoxy(0,2)
 
   if jetsToDestroy != 255 then
   begin
-    @printff('* JETS TO DESTROY:\n')
+    @printff("* JETS TO DESTROY:\n")
     if jetsToDestroy == 0 then
       @printff(adr:noone)
     else
@@ -907,7 +907,7 @@ begin
 
   if enemies != 255 then
   begin
-    @printff('*ENEMIES TO DESTROY:')
+    @printff("*ENEMIES TO DESTROY:")
     if enemies == 0 then
       @printff(adr:noone)
     else
@@ -916,33 +916,33 @@ begin
 
   if hits != 255 then
   begin
-    @printff('* YOUR SHIP:\n')
-    if hits == 0 then @printff('  NEITHER GET A HIT\n')
-    if hits < 9  then @printff('GET LESS THEN %d HITS', hits)
-    if hits >= 9 then @printff(' BEWARE YOUR ENERGY\n')
+    @printff("* YOUR SHIP:\n")
+    if hits == 0 then @printff("  NEITHER GET A HIT\n")
+    if hits < 9  then @printff("GET LESS THEN %d HITS", hits)
+    if hits >= 9 then @printff(" BEWARE YOUR ENERGY\n")
   end
 
   if shoots != 255 then
   begin
-    @printff                    ('* YOUR WEAPON:\n')
-    if shoots == 0 then @printff('     MUST NOT SHOOT\n')
-    if shoots == 1 then @printff('          SAVE AMMO\n')
-    if shoots > 10 then @printff('          OPEN FIRE\n')
+    @printff                    ("* YOUR WEAPON:\n")
+    if shoots == 0 then @printff("     MUST NOT SHOOT\n")
+    if shoots == 1 then @printff("          SAVE AMMO\n")
+    if shoots > 10 then @printff("          OPEN FIRE\n")
   end
 
-  @printff('\n* LAND ON THE SHIP')
+  @printff("\n* LAND ON THE SHIP")
 
 //  if energy != 255 then
 //  begin
-//    @printff                    ('* ENERGY LEVEL\n')
-//    if energy == 1 then @printff('         BE CAREFUL\n')
-//    if energy == 2 then @printff('       MORE RESPECT\n')
-//    if energy == 3 then @printff('            RESPECT\n')
-//    if energy == 4 then @printff('             BEWARE\n')
-//    if energy == 5 then @printff('             NOTICE\n')
+//    @printff                    ("* ENERGY LEVEL\n")
+//    if energy == 1 then @printff("         BE CAREFUL\n")
+//    if energy == 2 then @printff("       MORE RESPECT\n")
+//    if energy == 3 then @printff("            RESPECT\n")
+//    if energy == 4 then @printff("             BEWARE\n")
+//    if energy == 5 then @printff("             NOTICE\n")
 //  end
 
-//  @printff('\n* WATCH OUT FOR\n TALL BUILDINGS\n')
+//  @printff("\n* WATCH OUT FOR\n TALL BUILDINGS\n")
 
 end
 
@@ -1108,7 +1108,7 @@ begin
   if @getLanding() == 0 then    // landing == 0 abgestürzt, irgendwo
    begin
      @fast_gotoxy(5,4)
-     @printff('YOU LOSE!')
+     @printff("YOU LOSE!")
      mission_failed := 1
      resultcolorlist[4] := $e0
 
@@ -1122,13 +1122,13 @@ begin
      @fast_gotoxy(0,1)
      if mission_failed == 1 then
      begin
-       @printff(' MISSION +_%d FAILED',mission_level)
+       @printff(" MISSION +_%d FAILED",mission_level)
      end
      else
      begin
-       @printff('MISSION +_%d SUCCESS',mission_level)
+       @printff("MISSION +_%d SUCCESS",mission_level)
 
-//       @printff('Rest time value %d\n', timeValue)
+//       @printff("Rest time value %d\n", timeValue)
      end
 
      @fast_gotoxy(0,3)
@@ -1137,31 +1137,31 @@ begin
      sec := @sec_min_seconds()
      incrementScoreByRestTime()
 
-     @printff('* TIME:%x:%x REST:%x', min, sec, @GET_BCD_REST_TIME())
-     @printff('\n')
-     @printff('* %d DESTROYED JETS\n', @getDestroyedJets())
+     @printff("* TIME:%x:%x REST:%x", min, sec, @GET_BCD_REST_TIME())
+     @printff("\n")
+     @printff("* %d DESTROYED JETS\n", @getDestroyedJets())
 
-     @printff('* %d SHOT ENEMIES\n', @getKilledEnemies())
+     @printff("* %d SHOT ENEMIES\n", @getKilledEnemies())
 
-     @printff('* %d OWN HITS\n', @getRaumerHits())
+     @printff("* %d OWN HITS\n", @getRaumerHits())
 
-     @printff('* %d SHOOTS\n', @getRaumerShoots())
+     @printff("* %d SHOOTS\n", @getRaumerShoots())
 
-     @printff('* %d COLLISIONS\n', @getBuildingCollisions())
+     @printff("* %d COLLISIONS\n", @getBuildingCollisions())
 
      // MOVE STICK fuer next Mission
 
      resultcolorlist[10] := $e0
      if mission_failed == 1 then
      begin
-       @printff('  MOVE \\ TRY AGAIN')
+       @printff("  MOVE \\ TRY AGAIN")
      end
      else
      begin
        if mission_level < max_mission_level then
-         @printff('MOVE \\ NEXT MISSION')
+         @printff("MOVE \\ NEXT MISSION")
        else
-         @printff(' ALL MISSIONS DONE')
+         @printff(" ALL MISSIONS DONE")
      end
 
      if champ == 1 then
@@ -1170,18 +1170,18 @@ begin
      if mission_failed == 0 then
      begin
        // DEBUG OUTPUT
-       // @printff('i:=%d\n', i)
-       // @printff('level:=%d\n', level)
-       // @printff('use_level:=%d\n\n', use_level)
+       // @printff("i:=%d\n", i)
+       // @printff("level:=%d\n", level)
+       // @printff("use_level:=%d\n\n", use_level)
 
        @fast_gotoxy(0,12)
        if champ == 0 then
-         @printff(' GOD-MODE?  LOOSER!')
+         @printff(" GOD-MODE?  LOOSER!")
        else
        begin
          if mission_level == max_mission_level then
          begin
-           @printff('  CONGRATULATIONS!')
+           @printff("  CONGRATULATIONS!")
            if level < 8 then  // TODO: max_level
            begin
              level := level + 1
